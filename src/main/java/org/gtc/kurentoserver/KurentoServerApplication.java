@@ -1,6 +1,5 @@
 package org.gtc.kurentoserver;
 
-import org.gtc.kurentoserver.pipeline.PipelineManager;
 import org.kurento.client.KurentoClient;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

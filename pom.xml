@@ -145,18 +145,7 @@
 
 		<!--  Custom Kurento Modules -->
 
-		<dependency>
-			<groupId>org.kurento.module</groupId>
-			<artifactId>denoisecvmodule</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
-		</dependency>
-
-
-		<dependency>
-			<groupId>org.kurento.module</groupId>
-			<artifactId>recordermodule</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
-		</dependency>
+		<!-- Others-->
 
 		<dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -173,6 +162,8 @@
 			<artifactId>javaee-api</artifactId>
 			<version>8.0.1</version>
 		</dependency>
+
+		
  </dependencies>
 
 	<repositories>

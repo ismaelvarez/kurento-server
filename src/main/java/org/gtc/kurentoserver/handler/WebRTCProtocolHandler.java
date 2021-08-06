@@ -154,7 +154,7 @@ public class WebRTCProtocolHandler extends TextWebSocketHandler {
   }
 
   /**
-   * Sends an SDPAnswer to the client
+   * Sends a SDPAnswer to the client
    * @param sdpAnswer SDPAnswer of the KMS
    * @param session Websocket session
    * @param jsonMessage Message sended by the client
