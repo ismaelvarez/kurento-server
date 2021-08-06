@@ -136,14 +136,13 @@
     		<version>${kurento.version}</version>
 		</dependency>
 
-		<!-- https://mvnrepository.com/artifact/org.kurento.module/crowddetector -->
+		<!--  Custom Kurento Modules -->
+
 		<dependency>
 			<groupId>org.kurento.module</groupId>
-			<artifactId>crowddetector</artifactId>
-			<version>${kurento.version}</version>
+			<artifactId>recordermodule</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
-
-		<!--  Custom Kurento Modules -->
 
 		<!-- Others-->
 

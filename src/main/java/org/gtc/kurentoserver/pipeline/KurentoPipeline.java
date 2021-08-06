@@ -31,7 +31,8 @@ public abstract class KurentoPipeline {
     }
 
     /**
-     * Set the last media element of the pipeline.
+     * Set the last media element of the pipeline.ls
+     * excd 
      * @param element Last media element of the pipeline
      */
     protected void setEndHubSource(MediaElement element) {
@@ -48,7 +49,7 @@ public abstract class KurentoPipeline {
         return pipe;
     }
 
-    /**
+    /**exit
      * Add new WeRTCEndpoint 
      * @param sessionId Session id of the Websocket session
      * @param webRtcEndpoint WebRTCEndpoint 

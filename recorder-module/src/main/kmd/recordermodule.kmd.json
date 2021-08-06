@@ -1,0 +1,101 @@
+{
+  "name": "recordermodule",
+  "version": "0.0.1-dev",
+  "kurentoVersion": "^6.0.0",
+  "imports": [
+    {
+      "name": "core",
+      "version": "^6.0.0",
+      "mavenVersion": "[6.0.0,7.0.0-SNAPSHOT)",
+      "npmVersion": ">=6.0.0 <7.0.0"
+    },
+    {
+      "name": "elements",
+      "version": "^6.0.0",
+      "mavenVersion": "[6.0.0,7.0.0-SNAPSHOT)",
+      "npmVersion": ">=6.0.0 <7.0.0"
+    },
+    {
+      "name": "filters",
+      "version": "^6.0.0",
+      "mavenVersion": "[6.0.0,7.0.0-SNAPSHOT)",
+      "npmVersion": ">=6.0.0 <7.0.0"
+    }
+  ],
+  "code": {
+    "api": {
+      "java": {
+        "mavenGroupId": "org.kurento.module",
+        "mavenArtifactId": "recordermodule",
+        "mavenVersion": "0.0.1-SNAPSHOT",
+        "packageName": "org.kurento.module.recordermodule"
+      },
+      "js": {
+        "nodeName": "kurento-module-recordermodule",
+        "npmVersion": "0.0.1",
+        "npmDescription": ""
+      }
+    },
+    "implementation": {
+      "cppNamespace": "kurento::module::recordermodule",
+      "lib": "libkmsrecordermodule"
+    }
+  },
+  "remoteClasses": [
+    {
+      "name": "RecorderModule",
+      "doc": "Save frames into the filesystem.",
+      "extends": "OpenCVFilter",
+      "constructor": {
+        "params": [
+          {
+            "name": "mediaPipeline",
+            "doc": "the parent :rom:cls:`MediaPipeline`",
+            "type": "MediaPipeline"
+          },
+          {
+            "name": "path",
+            "doc": "Path to the filesystem",
+            "type": "String"
+          },
+          {
+            "name": "filename",
+            "doc": "Name of the file without extension",
+            "type": "String"
+          }
+        ],
+        "doc": "Create an element"
+      },
+      "properties": [
+        {
+          "name": "path",
+          "doc": "Path to the filesystem",
+          "type": "String"
+        },
+        {
+          "name": "filename",
+          "doc": "Name of the file without extension",
+          "type": "String"
+        }
+      ],
+      "events": [
+        "RecorderModuleFrameSaved"
+      ]
+    }
+  ],
+  "complexTypes": [],
+  "events": [
+    {
+      "properties": [
+        {
+          "name": "pathToFile",
+          "doc": "Path of the file",
+          "type": "String"
+        }
+      ],
+      "extends": "Media",
+      "name": "RecorderModuleFrameSaved",
+      "doc": "Event raise when a frame is saved"
+    }
+  ]
+}
