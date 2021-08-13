@@ -24,6 +24,8 @@ public abstract class KurentoPipeline {
     protected final Map<String, WebRtcEndpoint> webRtcEndpoints = new ConcurrentHashMap<>();
     protected DispatcherOneToMany endHub;
 
+    private MediaElement lastElement;
+
     public KurentoPipeline(KurentoClient kurentoClient) {
         this.kurento = kurentoClient;
         pipe = this.kurento.createMediaPipeline();
@@ -36,9 +38,10 @@ public abstract class KurentoPipeline {
      * @param element Last media element of the pipeline
      */
     protected void setEndHubSource(MediaElement element) {
-        HubPort port = new HubPort.Builder(endHub).build();
-        element.connect(port);
-        endHub.setSource(port);
+        //HubPort port = new HubPort.Builder(endHub).build();
+        //element.connect(port);
+        //endHub.setSource(port);
+        lastElement = element;
     }
 
     /**
@@ -56,8 +59,8 @@ public abstract class KurentoPipeline {
      */
     public void addWebRtcEndpoint(String sessionId, WebRtcEndpoint webRtcEndpoint) {
         webRtcEndpoints.put(sessionId, webRtcEndpoint);
-        HubPort port = new HubPort.Builder(endHub).build();
-        port.connect(webRtcEndpoint);
+        //HubPort port = new HubPort.Builder(endHub).build();
+        lastElement.connect(webRtcEndpoint);
     }
 
     /**
