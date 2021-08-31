@@ -22,9 +22,16 @@
 		<webjars.demo-version>1.5.1</webjars.demo-version>
 		<webjars.lightbox-version>5.2.0</webjars.lightbox-version>
 		<webjars.webrtc-version>7.4.0</webjars.webrtc-version>
-
+		<start-class>org.gtc.kurentoserver.KurentoApplicationServer</start-class>
 	</properties>
+
 	<dependencies>
+
+		<dependency>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+			<version>20180130</version>
+		</dependency>
 
 		<!-- Guava -->
 		<dependency>
@@ -144,6 +151,18 @@
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
 
+		<dependency>
+			<groupId>org.gtc.kurento.orion</groupId>
+			<artifactId>kurento-orion</artifactId>
+			<version>1.0-SNAPSHOT</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.kurento.module</groupId>
+			<artifactId>cardetector</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+
 		<!-- Others-->
 
 		<dependency>
@@ -198,7 +217,38 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>    
+					<mainClass>org.gtc.kurentoserver.KurentoApplicationServer</mainClass>
+					<layout>JAR</layout>
+					<addResources>true</addResources>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>repackage</goal>
+						</goals>
+						<configuration>
+							<classifier>exec</classifier>
+						</configuration>
+						</execution>
+				</executions>
 			</plugin>
+			<plugin>
+				<!-- Build an executable JAR -->
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>3.1.0</version>
+				<configuration>
+				  <archive>
+					<manifest>
+					  <addClasspath>true</addClasspath>
+					  <classpathPrefix>lib/</classpathPrefix>
+					  <mainClass>org.gtc.kurentoserver.KurentoApplicationServer</mainClass>
+					</manifest>
+				  </archive>
+				</configuration>
+				
+			  </plugin>
 		</plugins>
 
 		<resources>

@@ -1,51 +1,58 @@
 package org.gtc.kurentoserver.services.restful.entities;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import org.springframework.core.io.ClassPathResource;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 public class Camera {
-
-    public static List<Camera> getCameras() {
-        if (cameras != null) {
-            return cameras;
-        }
-        List<Camera> cameras = new ArrayList<>();
-        try {
-            ClassPathResource classPathResource = new ClassPathResource("urls.txt", Camera.class.getClassLoader());
-            
-            Files.lines(Paths.get(classPathResource.getURI())).forEachOrdered(line->{
-                String[] parameters = line.split("=");
-                if (parameters.length == 4 && !parameters[0].startsWith("#")) {
-                    cameras.add(new Camera(parameters[0], parameters[1], parameters[2], parameters[3]));
-                }
-            });
-        } catch (IOException e) {
-            e.printStackTrace();
-        } 
-
-        return cameras;
-    }
-
-    private static List<Camera> cameras = null;
-        
-    @JsonIgnore
     private String url;
-    private Object descripion;
     private String name;
+    @JsonDeserialize(as=ArrayList.class, contentAs=String.class)
+    private List<String> group;
+    private String description;
     private String id;
+    private String user;
+    @JsonProperty(access = Access.WRITE_ONLY)
+    private String password;
+    @JsonSerialize(keyAs = String.class, contentAs = Boolean.class)
+    private Map<String, Boolean> kurentoConfig;
+
+    public Camera(){}
 
     public Camera(String id, String name, String description, String url) {
         this.id = id;
         this.name = name;
-        this.descripion = description;
+        this.description = description;
         this.url = url;
+    }
+
+    public String getUser() {
+        return user;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public Map<String, Boolean> getKurentoConfig() {
+        return kurentoConfig;
+    }
+
+    public void setKurentoConfig(Map<String, Boolean> kurentoConfig) {
+        this.kurentoConfig = kurentoConfig;
     }
 
     public String getUrl() {
@@ -56,12 +63,19 @@ public class Camera {
         this.url = url;
     }
 
-    public Object getDescripion() {
-        return descripion;
+    @JsonProperty(access = Access.WRITE_ONLY)
+    public String getUrlWithCredentials() {
+        int index = url.indexOf("://") + 3;
+        String credentials = user + ":" + password + "@";
+        return url.substring(0, index) + credentials + url.substring(index);
     }
 
-    public void setDescripion(Object descripion) {
-        this.descripion = descripion;
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getName() {
@@ -80,5 +94,44 @@ public class Camera {
         this.id = id;
     }
 
+    public List<String> getGroup() {
+		return group;
+	}
+
+	public void setGroup(List<String> group) {
+		this.group = group;
+	}
+
+	@Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((id == null) ? 0 : id.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Camera other = (Camera) obj;
+        if (id == null) {
+            if (other.id != null)
+                return false;
+        } else if (!id.equals(other.id))
+            return false;
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "Camera [description=" + description + ", group=" + group + ", id=" + id + ", name=" + name + "]";
+    }
+
+    
     
 }

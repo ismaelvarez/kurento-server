@@ -1,10 +1,12 @@
 package org.gtc.kurentoserver.pipeline;
 
+import java.io.IOException;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.gtc.kurentoserver.services.PropertiesLoader;
 import org.kurento.client.DispatcherOneToMany;
-import org.kurento.client.HubPort;
 import org.kurento.client.IceCandidate;
 import org.kurento.client.KurentoClient;
 import org.kurento.client.MediaElement;
@@ -23,6 +25,7 @@ public abstract class KurentoPipeline {
     protected MediaPipeline pipe;
     protected final Map<String, WebRtcEndpoint> webRtcEndpoints = new ConcurrentHashMap<>();
     protected DispatcherOneToMany endHub;
+    protected Properties configuration = new Properties();
 
     private MediaElement lastElement;
 
@@ -30,6 +33,11 @@ public abstract class KurentoPipeline {
         this.kurento = kurentoClient;
         pipe = this.kurento.createMediaPipeline();
         endHub = new DispatcherOneToMany.Builder(pipe).build();
+        try {
+            configuration = PropertiesLoader.loadApplicationProperties();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**

@@ -58,6 +58,13 @@ public class PipelineManager {
         });
     }
 
+    public void disconnectPipeline(String pipelineId) {
+        if (!pipelines.containsKey(pipelineId)) return;
+        
+        pipelines.get(pipelineId).release();
+        pipelines.remove(pipelineId);
+    }
+
     /**
      * Releases all pipelines when closing manager
      */
@@ -67,6 +74,7 @@ public class PipelineManager {
         for (Entry<String, KurentoPipeline> entry : pipelines.entrySet()) {
             entry.getValue().release();
         }
+        pipelines.clear();
     }
     
     

@@ -1,6 +1,9 @@
 package org.gtc.kurentoserver;
 
+import org.gtc.kurento.orion.subscription.OrionSubscriptionManager;
 import org.kurento.client.KurentoClient;
+import org.kurento.orion.connector.OrionConnectorConfiguration;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -12,11 +15,18 @@ import org.springframework.web.socket.config.annotation.EnableWebSocket;
 @SpringBootApplication
 @EnableWebSocket
 @ComponentScan
-public class KurentoServerApplication {
+public class KurentoApplicationServer {
+	@Value("${kurento.address}")
+	private String kurentoAddress;
 
 	@Bean
 	public KurentoClient kurentoClient() {
 		return KurentoClient.create();
+	}
+
+	@Bean
+	public OrionSubscriptionManager orionSubscriptionManager() {
+		return new OrionSubscriptionManager(new OrionConnectorConfiguration());
 	}
 
 	@Bean
@@ -30,7 +40,7 @@ public class KurentoServerApplication {
 	}
 
 	public static void main(String[] args) {
-		SpringApplication.run(KurentoServerApplication.class, args);
+		SpringApplication.run(KurentoApplicationServer.class, args);
 	}
 	
 }
