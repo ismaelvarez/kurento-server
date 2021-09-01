@@ -15,24 +15,34 @@
  *
  */
 
-var ws = new WebSocket('wss://192.168.15.118:8443/kurento');
-var videoOutput;
+var ws = new WebSocket('wss://'+location.host+'/kurento');
+
+var gtcExtVideo;
+var gtcIntVideo;
 var webRtcPeer;
+var webs = new Map;
 var state = null;
+
+var stun = {
+	"urls" : "stun:localhost:3478"
+};
+
+var turn = {
+	"urls" : "turn:localhost:3478",
+	"username" : "guest",
+	"credential" : "12345"
+}
 
 var created = false;
 
 var conn;
 
-const I_CAN_START = 0;
-const I_CAN_STOP = 1;
-const I_AM_STARTING = 2;
-
 window.onload = function() {
 	console.log("Page loaded ...");
 	console = new Console('console', console);
-	videoOutput = document.getElementById('videoOutput');
-	setState(I_CAN_START);
+	gtcExtVideo = document.getElementById('videoExt');
+	gtcIntVideo = document.getElementById('videoInt');
+	//init();
 }
 
 window.onbeforeunload = function() {
@@ -45,23 +55,17 @@ ws.onmessage = function(message) {
 	console.info('Received message: ' + message.data);
 
 	switch (parsedMessage.id) {
-	case 'startResponse':
-		startResponse(parsedMessage);
-		break;
-	case 'noPlayer':
-		noPlayer();
-		break;
-	case 'noPlaying':
-		noPlaying();
+	case 'sdpAnswer':
+		startVisualice(parsedMessage);
 		break;
 	case 'error':
-		if (state == I_AM_STARTING) {
-			setState(I_CAN_START);
-		}
 		onError("Error message from server: " + parsedMessage.message);
 		break;
+	case 'stopStream':
+		stop();
+		break;
 	case 'iceCandidate':
-	    webRtcPeer.addIceCandidate(parsedMessage.candidate, function (error) {
+	    webs.get(parsedMessage.idCam).addIceCandidate(parsedMessage.candidate, function (error) {
 	        if (error) {
 		      console.error("Error adding candidate: " + error);
 		      return;
@@ -69,53 +73,53 @@ ws.onmessage = function(message) {
 	    });
 	    break;
 	default:
-		if (state == I_AM_STARTING) {
-			setState(I_CAN_START);
-		}
 		onError('Unrecognized message', parsedMessage);
 	}
 }
 
-function noPlayer () {
-	alert ("Player not configured. Please set a feed to playing");
-	setState(I_CAN_START);
-	hideSpinner(videoOutput);
-    document.getElementById('changeFeed').onclick= changeFeed;
-    document.getElementById('address').disabled=false;    
-}
-
-function start() {
-	console.log("Starting video call ...")
-	// Disable start button
-	setState(I_AM_STARTING);
-	showSpinner(videoOutput);
+function init() {
+	console.log("Starting WebRTC")
+	showSpinner(gtcIntVideo, gtcExtVideo);
 
 	console.log("Creating WebRtcPeer and generating local sdp offer ...");
 
 	var options = {
-		      remoteVideo: videoOutput,
-		      onicecandidate: onIceCandidate
+		remoteVideo: gtcIntVideo,
+		onicecandidate: onIceCandidate,
+		configuration : { iceServers: [stun, turn]}
     }
-	webRtcPeer = new kurentoUtils.WebRtcPeer.WebRtcPeerRecvonly(options,
+
+	webs.set("gtcInt", createWebRcpPeers(options, "gtcInt"));
+
+	options = {
+		remoteVideo: gtcExtVideo,
+		onicecandidate: onIceCandidate,
+		configuration : { iceServers: [stun, turn]}
+    }
+	
+	webs.set("gtcExt", createWebRcpPeers(options, "gtcExt"));
+
+	created = true;
+}
+
+function createWebRcpPeers(options, cam) {
+	return new kurentoUtils.WebRtcPeer.WebRtcPeerRecvonly(options,
 		function (error) {
 		  if(error) {
 			  return console.error(error);
 		  }
-		  this.generateOffer (onOffer);
+		  this.generateOffer (function (error, offerSdp) {
+			if (error) return console.error (error);
+			console.info('Invoking SDP offer callback function ' + location.host);
+			var message = {
+				id : 'sdpOffer',
+				idCam : cam,
+				sdpOffer : offerSdp
+			}
+			
+			sendMessage(message);	
+		});
 	});
-	created = true;
-}
-
-function onOffer(error, offerSdp) {
-	if (error) return console.error (error);
-	console.info('Invoking SDP offer callback function ' + location.host);
-	var message = {
-		id : 'start',
-		sdpOffer : offerSdp,
-		cam : 'GTC_EXT'
-	}
-	
-	sendMessage(message);	
 }
 
 function onIceCandidate(candidate) {
@@ -130,55 +134,33 @@ function onIceCandidate(candidate) {
 
 function onError(error) {
 	roisValues = new Array();
-	setState(I_CAN_PLAY);
 	console.error(error);
 }
 
-function startResponse(message) {
-	setState(I_CAN_STOP);
+function startVisualice(message) {
 	console.log("SDP answer received from server. Processing ...");
-	webRtcPeer.processAnswer (message.sdpAnswer, function (error) {
+	webs.get(message.idCam).processAnswer (message.sdpAnswer, function (error) {
 		if (error) return console.error (error);
 	});
 }
 
 function stop() {
-	console.log("Stopping video call ...");
-	setState(I_CAN_START);
-	if (webRtcPeer) {
-		webRtcPeer.dispose();
-		webRtcPeer = null;
+	webs.forEach(function(value, key) {
+		value.dispose();
+	});
+	webs.clear();
 
-		var message = {
-			id : 'stop'
-		}
-		sendMessage(message);
+	var message = {
+		id : 'stopStream'
 	}
-	hideSpinner(videoOutput);
+	sendMessage(message);
+
+	hideSpinner(gtcExtVideo, gtcIntVideo);
 }
 
-function setState(nextState) {
-	switch (nextState) {
-	case I_CAN_START:
-		$('#start').attr('disabled', false);
-		$('#stop').attr('disabled', true);
-		break;
-
-	case I_CAN_STOP:
-		$('#start').attr('disabled', true);
-		$('#stop').attr('disabled', false);
-		break;
-
-	case I_AM_STARTING:
-		$('#start').attr('disabled', true);
-		$('#stop').attr('disabled', true);
-		break;
-
-	default:
-		onError("Unknown state " + nextState);
-		return;
-	}
-	state = nextState;
+function refresh() {
+	stop();
+	init();
 }
 
 function sendMessage(message) {
@@ -205,12 +187,6 @@ function hideSpinner() {
 function updateValue(val, name) {
 	document.getElementById(name).value = val;
 	changeProcessingWidth (val);
-}
-
-function noPlaying() {
-	console.log ("Video feed not available.");
-	setState(I_CAN_START);
-	hideSpinner(videoOutput);
 }
 
 function changeProcessingWidth (width){
