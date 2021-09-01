@@ -1,8 +1,5 @@
 package org.gtc.kurentoserver.pipeline.types;
 
-
-import java.util.Properties;
-
 import org.gtc.kurentoserver.pipeline.KurentoPipeline;
 import org.gtc.kurentoserver.services.restful.entities.Camera;
 import org.kurento.client.KurentoClient;
