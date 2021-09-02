@@ -2,16 +2,16 @@ package org.gtc.kurentoserver.services.orion.entities;
 
 import org.kurento.orion.connector.entities.event.MediaEvent;
 
-public class CarsDetected extends MediaEvent {
+public class CarsDetectedEvent extends MediaEvent {
 
     int numCars;
     String idCam;
     String id;
 
-    public CarsDetected(int numCars, String idCam) {
+    public CarsDetectedEvent(int numCars, String idCam) {
         this.numCars = numCars;
         this.idCam = idCam;
-        id = "CarDetected_"+idCam;
+        id = "CarDetection_"+idCam;
         this.setType("CarDetection");
         this.setId(id);
     }

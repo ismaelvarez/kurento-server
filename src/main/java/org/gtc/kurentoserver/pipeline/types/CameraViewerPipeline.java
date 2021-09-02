@@ -1,12 +1,15 @@
 package org.gtc.kurentoserver.pipeline.types;
 
 import org.gtc.kurentoserver.pipeline.KurentoPipeline;
+import org.gtc.kurentoserver.services.orion.publisher.CarDetectionPublisher;
 import org.gtc.kurentoserver.services.restful.entities.Camera;
 import org.kurento.client.KurentoClient;
 import org.kurento.client.MediaElement;
 import org.kurento.client.PlayerEndpoint;
 import org.kurento.module.cardetector.CarDetector;
 import org.kurento.module.recordermodule.RecorderModule;
+import org.kurento.orion.connector.OrionConnectorConfiguration;
+import org.kurento.orion.connector.OrionConnectorException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,7 +21,7 @@ public class CameraViewerPipeline extends KurentoPipeline {
     
     private Camera camera;
     private PlayerEndpoint playerEndpoint;
-    //private CarDetectionPublisher carPublisher = new CarDetectionPublisher(new OrionConnectorConfiguration());
+    private CarDetectionPublisher carPublisher = new CarDetectionPublisher(new OrionConnectorConfiguration());
     private CarDetector carDetector;
     private RecorderModule recorderModule;
 
@@ -54,6 +57,11 @@ public class CameraViewerPipeline extends KurentoPipeline {
                 Integer.parseInt(configuration.getProperty("kurento.cardetector.height"))).build();
             carDetector.addCarsDetectedListener(event -> {
                 log.debug("Camera: {} -- Cars Detected={}", this.camera.getId(), event.getCarsDetected());
+                try {
+                    carPublisher.publish(event);
+                } catch (OrionConnectorException ex) {
+                    carPublisher.update(event);
+                }
             });
 
             last.connect(carDetector);

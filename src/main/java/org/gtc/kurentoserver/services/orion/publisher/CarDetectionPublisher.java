@@ -1,20 +1,21 @@
 package org.gtc.kurentoserver.services.orion.publisher;
 
-import org.gtc.kurentoserver.services.orion.entities.CarsDetected;
+import com.fasterxml.jackson.databind.ser.std.StdKeySerializers.Default;
+
+import org.gtc.kurentoserver.services.orion.entities.CarsDetectedEntity;
 import org.kurento.module.cardetector.CarsDetectedEvent;
 import org.kurento.orion.connector.OrionConnectorConfiguration;
-import org.kurento.orion.connector.entities.event.MediaEvent;
-import org.kurento.orion.connector.entities.event.MediaEventOrionPublisher;
+import org.kurento.orion.publisher.DefaultOrionPublisher;
 
-public class CarDetectionPublisher extends MediaEventOrionPublisher<CarsDetectedEvent> {
+public class CarDetectionPublisher extends DefaultOrionPublisher<CarsDetectedEvent, CarsDetectedEntity> {
 
     public CarDetectionPublisher(OrionConnectorConfiguration config) {
-        super(config);
+        super(config, CarsDetectedEntity.class);
     }
 
     @Override
-    public MediaEvent mapEntityToOrionEntity(CarsDetectedEvent event) {
-        CarsDetected orion_entity = new CarsDetected(event.getCarsDetected(), event.getIdCam());
+    public CarsDetectedEntity mapEntityToOrionEntity(CarsDetectedEvent event) {
+        CarsDetectedEntity orion_entity = new CarsDetectedEntity(event.getCarsDetected(), event.getIdCam());
         return orion_entity;
     }
     
