@@ -65,6 +65,9 @@ public class Camera {
 
     @JsonProperty(access = Access.WRITE_ONLY)
     public String getUrlWithCredentials() {
+        if (user.equals("")) {
+            return url;
+        }
         int index = url.indexOf("://") + 3;
         String credentials = user + ":" + password + "@";
         return url.substring(0, index) + credentials + url.substring(index);
