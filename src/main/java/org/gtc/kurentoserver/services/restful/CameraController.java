@@ -45,6 +45,8 @@ public class CameraController {
     @Autowired
     private CameraRepository repository;
 
+    private Long lastNotification = 0L;
+
 
     @PostConstruct
     public void init() {
@@ -91,6 +93,10 @@ public class CameraController {
     void notification(@RequestBody @Validated String payload) throws JsonMappingException, JsonProcessingException {
         log.trace("CameraController::notification({})", payload);
         log.info("New notification from Orion: {}", payload);
+
+        if (System.currentTimeMillis() - lastNotification < 3000) return;
+
+        lastNotification = System.currentTimeMillis();
 
     	List<Camera> cameras = notificationParser.getEntitiesFrom(payload);
         for (Camera camera : cameras) {
