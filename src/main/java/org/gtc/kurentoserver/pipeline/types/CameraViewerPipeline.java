@@ -49,8 +49,10 @@ public class CameraViewerPipeline extends KurentoPipeline {
         }
 
         // Configuration for the Car Detection
+        
         if (camera.getKurentoConfig().getOrDefault("carDetection", false)) {
-            carDetector = new CarDetector.Builder(pipe, System.getenv().get("CAR_DETECTOR_CASCADE_XML"), camera.getId(),
+            carDetector = new CarDetector.Builder(pipe, System.getenv().getOrDefault("CAR_DETECTOR_CASCADE_XML", 
+            configuration.getProperty("kurento.cardetector.cascadexml.location")), camera.getId(),
                 Double.parseDouble(configuration.getProperty("kurento.cardetector.scalefactor")),
                 Integer.parseInt(configuration.getProperty("kurento.cardetector.minneighbors")),
                 Integer.parseInt(configuration.getProperty("kurento.cardetector.width")),

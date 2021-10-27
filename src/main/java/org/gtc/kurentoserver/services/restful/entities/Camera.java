@@ -17,6 +17,8 @@ public class Camera {
     private String description;
     private String id;
     private String user;
+    private String cameraType;
+
     @JsonProperty(access = Access.WRITE_ONLY)
     private String password;
     @JsonSerialize(keyAs = String.class, contentAs = Boolean.class)
@@ -104,6 +106,15 @@ public class Camera {
 	public void setGroup(List<String> group) {
 		this.group = group;
 	}
+
+
+    public String getCameraType() {
+        return cameraType;
+    }
+
+    public void setCameraType(String cameraType) {
+        this.cameraType = cameraType;
+    }
 
 	@Override
     public int hashCode() {
