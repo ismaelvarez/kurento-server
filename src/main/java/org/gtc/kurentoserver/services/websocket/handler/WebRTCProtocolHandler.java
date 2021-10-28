@@ -147,7 +147,9 @@ public class WebRTCProtocolHandler extends TextWebSocketHandler {
       JsonObject response = new JsonObject();
       response.addProperty("id", "error");
       response.addProperty("message", message);
-      session.sendMessage(new TextMessage(response.toString()));
+      synchronized (session) {
+        session.sendMessage(new TextMessage(response.toString()));
+      }
     } catch (IOException e) {
       log.error("Exception sending message", e);
     }

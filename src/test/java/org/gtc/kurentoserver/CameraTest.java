@@ -2,6 +2,13 @@ package org.gtc.kurentoserver;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -13,41 +20,51 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.apache.commons.io.IOUtils;
+import org.gtc.kurentoserver.services.orion.entities.OrionNotification;
+import org.gtc.kurentoserver.services.orion.notification.CameraOrionNotificationParser;
 import org.gtc.kurentoserver.services.restful.entities.Camera;
 import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 
 
 public class CameraTest {
 
-	static String json = "{\"data\" : [{\"id\":\"gtcInt\",\"type\":\"Camera\",\"url\":{\"type\":\"String\",\"value\":\"ggggg\",\"metadata\":{}}}, {\"id\":\"gtcInt\",\"type\":\"Camera\",\"url\":{\"type\":\"String\",\"value\":\"ggggg\",\"metadata\":{}}}]}";
-
+	
     @Test
-	void contextLoads() throws JsonMappingException, JsonProcessingException, JSONException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode data = objectMapper.readTree(json).get("data");
-        JavaType type = objectMapper.getTypeFactory().
-            constructCollectionType(List.class, Camera.class);
-        String a = normalice(data).get("data").toString();
-    	List<Camera> cameras = objectMapper.readValue(a, type);
+	void contextLoads() throws JSONException, IOException {
+        InputStream f = getClass().getResourceAsStream("Notification.json");
+        
+        try {
 
-		assertEquals(2, cameras.size());
+            String everything = readFromInputStream(f);
+            CameraOrionNotificationParser parser = new CameraOrionNotificationParser();
+
+            OrionNotification<Camera> notification = parser.getEntitiesFrom(everything);
+    
+            assertEquals(notification.getId(), "57458eb60962ef754e7c0998");
+    
+            assertEquals(1, notification.getEntities().size());
+    
+            Camera c = notification.getEntities().get(0);
+    
+            assertEquals(c.getCameraType(), "Static");
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
-    private static JSONObject normalice(JsonNode data) throws JSONException {
-        List<Map<String, String>> list = new ArrayList<>();
-        for (JsonNode node : data) {
-            Map<String, String> map = new HashMap<>();
-            map.put("id", node.get("id").asText());
-            map.put("url", node.get("url").get("value").asText());
-            map.put("description", "des");
-            map.put("name", "name");
-            list.add(map);
+    private String readFromInputStream(InputStream inputStream) throws IOException {
+        StringBuilder resultStringBuilder = new StringBuilder();
+        try (BufferedReader br
+        = new BufferedReader(new InputStreamReader(inputStream))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                resultStringBuilder.append(line).append("\n");
+            }
         }
-        JSONObject jsonArray = new JSONObject();
-        jsonArray.put("data", list);
-        return jsonArray;
+        return resultStringBuilder.toString();
     }
     
 }

@@ -1,9 +1,9 @@
 package org.gtc.kurentoserver.services.orion;
 
-import java.util.List;
+import org.gtc.kurentoserver.services.orion.notification.OrionNotification;
 
 public interface OrionNotificationParser<T> {
 
-    List<T> getEntitiesFrom(String notification) throws Exception;
+    OrionNotification<T> getEntitiesFrom(String notification) throws Exception;
     
 }

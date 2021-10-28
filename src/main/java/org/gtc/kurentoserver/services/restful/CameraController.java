@@ -12,9 +12,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
 import org.gtc.kurentoserver.KurentoServerHelper;
-import org.gtc.kurentoserver.services.orion.CameraOrionNotificationParser;
-import org.gtc.kurentoserver.services.restful.entities.Camera;
-import org.gtc.kurentoserver.services.restful.repository.CameraRepository;
+import org.gtc.kurentoserver.dao.CameraDAO;
+import org.gtc.kurentoserver.entities.Camera;
+import org.gtc.kurentoserver.services.orion.OrionContextBroker;
+import org.gtc.kurentoserver.services.orion.notification.CameraOrionNotificationParser;
+import org.gtc.kurentoserver.services.orion.notification.OrionNotification;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,17 +38,20 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController("rest")
 @Order(0)
 public class CameraController {
+    private static final String STREAM = "Stream";
+    private static final String STATIC = "Static";
+
     private static final Logger log = LoggerFactory.getLogger(CameraController.class);
 
     @Autowired
     private KurentoServerHelper kurentoServerHelper;
+    @Autowired
+    private OrionContextBroker ocb;
+
     private CameraOrionNotificationParser notificationParser = new CameraOrionNotificationParser();
     
     @Autowired
-    private CameraRepository repository;
-
-    private Long lastNotification = 0L;
-
+    private CameraDAO repository;
 
     @PostConstruct
     public void init() {
@@ -92,23 +97,27 @@ public class CameraController {
     @PostMapping("/cameras")
     void notification(@RequestBody @Validated String payload) throws JsonMappingException, JsonProcessingException {
         log.trace("CameraController::notification({})", payload);
-        log.info("New notification from Orion: {}", payload);
 
-        if (System.currentTimeMillis() - lastNotification < 3000) return;
-
-        lastNotification = System.currentTimeMillis();
-
-    	List<Camera> cameras = notificationParser.getEntitiesFrom(payload);
-        for (Camera camera : cameras) {
-            if (!kurentoServerHelper.contains(camera.getId())) {
-                log.info("Created {}", camera.toString());
+    	OrionNotification<Camera> notification = notificationParser.getEntitiesFrom(payload);
+        if (notification.getId().equals(ocb.getSubscriptionId())) {
+            log.info("New notification from Orion: {}", payload);
+            for (Camera camera : notification.getEntities()) {
+                if (repository.contains(camera.getId())) {
+                    repository.delete(camera);
+                }
+                
                 repository.add(camera);
-                kurentoServerHelper.createPipelineWithCamera(camera);
-            } else {
-                log.info("Updated {}", camera.toString());
-                repository.delete(camera);
-                repository.add(camera);
-                kurentoServerHelper.reloadPipelineOfCamera(camera);
+
+                if (camera.getCameraType().equals(STREAM)) {
+                    if (!kurentoServerHelper.contains(camera.getId())) {
+                        log.info("Created {}", camera.toString());
+                        kurentoServerHelper.createPipelineWithCamera(camera);
+                    } else {
+                        log.info("Updated {}", camera.toString());
+                        kurentoServerHelper.reloadPipelineOfCamera(camera);
+                    }
+                }
+                
             }
         }
     }

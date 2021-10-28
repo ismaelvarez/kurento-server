@@ -1,7 +1,5 @@
 package org.gtc.kurentoserver.services.orion.publisher;
 
-import com.fasterxml.jackson.databind.ser.std.StdKeySerializers.Default;
-
 import org.gtc.kurentoserver.services.orion.entities.CarsDetectedEntity;
 import org.kurento.module.cardetector.CarsDetectedEvent;
 import org.kurento.orion.connector.OrionConnectorConfiguration;

@@ -45,6 +45,13 @@ public class OrionContextBroker {
     }
     
     /**
+     * Returns the subscription id of the OCB
+     */
+    public String getSubscriptionId()  {
+        return subscriptionId;
+    }
+    
+    /**
      * Subscribe to the orion
      */
     @EventListener(ApplicationReadyEvent.class)
@@ -56,7 +63,7 @@ public class OrionContextBroker {
         req.setThrottling(5);
         req.setNotificationUrl(notificationUrl);
         EntityPattern a = new EntityPattern();
-        a.setIdPattern("gtc*");
+        a.setIdPattern(".*");
         a.setType("Camera");
         req.addEntity(a);
 

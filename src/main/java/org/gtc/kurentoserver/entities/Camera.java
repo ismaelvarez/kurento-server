@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -17,7 +18,8 @@ public class Camera {
     private String description;
     private String id;
     private String user;
-    private String cameraType;
+    @JsonIgnoreProperties(ignoreUnknown = true) 
+    private String cameraType = "Stream";
 
     @JsonProperty(access = Access.WRITE_ONLY)
     private String password;

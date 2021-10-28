@@ -1,4 +1,4 @@
-package org.gtc.kurentoserver.services.orion;
+package org.gtc.kurentoserver.services.orion.notification;
 
 import java.util.Iterator;
 import java.util.List;
@@ -13,6 +13,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import org.gtc.kurentoserver.services.orion.OrionNotificationParser;
+import org.gtc.kurentoserver.services.orion.entities.OrionNotification;
 import org.gtc.kurentoserver.services.restful.entities.Camera;
 
 public class CameraOrionNotificationParser implements OrionNotificationParser<Camera> {
@@ -21,9 +23,10 @@ public class CameraOrionNotificationParser implements OrionNotificationParser<Ca
      * Parse Orion notification JSON to Camera Objects
      */
     @Override
-    public List<Camera> getEntitiesFrom(String notification) throws JsonMappingException, JsonProcessingException {
+    public OrionNotification<Camera> getEntitiesFrom(String notification) throws JsonMappingException, JsonProcessingException {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
+        String id = objectMapper.readTree(notification).get("subscriptionId").asText();
         JsonNode data = objectMapper.readTree(notification).get("data");
 
         JavaType type = objectMapper.getTypeFactory().
@@ -32,7 +35,7 @@ public class CameraOrionNotificationParser implements OrionNotificationParser<Ca
 
         ArrayNode cameras = normalice(objectMapper, data);
 
-    	return objectMapper.readValue(cameras.toString(), type);
+    	return new OrionNotification<Camera>(id, objectMapper.readValue(cameras.toString(), type));
     }
     
     private ArrayNode normalice(ObjectMapper mapper, JsonNode data) {

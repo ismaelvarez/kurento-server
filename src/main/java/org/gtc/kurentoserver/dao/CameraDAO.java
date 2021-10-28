@@ -33,5 +33,9 @@ public class CameraRepository {
         return cameras;
     }
 
+    public boolean contains(String cameraId) {
+        return cameras.stream().filter(camera -> camera.getId().equals(cameraId)).count() > 0;
+    }
+
     
 }
