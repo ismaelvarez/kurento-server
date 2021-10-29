@@ -1,4 +1,4 @@
-package org.gtc.kurentoserver.pipeline;
+package org.gtc.kurentoserver.services.pipeline;
 
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
@@ -8,16 +8,19 @@ import javax.annotation.PreDestroy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
  * Manager of all the pipelines active in the server
  */
 @Component
+@EnableScheduling
 public class PipelineManager {
     private static final Logger log = LoggerFactory.getLogger(PipelineManager.class);
 
-    private ConcurrentMap<String, KurentoPipeline> pipelines;
+    private ConcurrentMap<String, WebRtcPipeline> pipelines;
 
     public PipelineManager() {
         pipelines = new ConcurrentHashMap<>();
@@ -28,14 +31,14 @@ public class PipelineManager {
      * @param id Identifier of the pipeline
      * @param pipeline Pipeline
      */
-    public void add(String id, KurentoPipeline pipeline) {
+    public void add(String id, WebRtcPipeline pipeline) {
         if (!pipelines.containsKey(id)) {
             pipelines.put(id, pipeline);
             pipeline.construct();
         }
     }
 
-    public KurentoPipeline get(String id) {
+    public WebRtcPipeline get(String id) {
         return pipelines.getOrDefault(id, null);
     }
 
@@ -63,6 +66,7 @@ public class PipelineManager {
         
         pipelines.get(pipelineId).release();
         pipelines.remove(pipelineId);
+		log.info("Pipeline with id {} disconnected...", pipelineId);
     }
 
     /**
@@ -71,10 +75,21 @@ public class PipelineManager {
     @PreDestroy
     public void disconnectPipelines() {
         log.info("Releasing all pipelines");
-        for (Entry<String, KurentoPipeline> entry : pipelines.entrySet()) {
+        for (Entry<String, WebRtcPipeline> entry : pipelines.entrySet()) {
             entry.getValue().release();
         }
         pipelines.clear();
+    }
+
+    @Scheduled(fixedRate = 5000)
+    public void restorePipelines() {
+        for (Entry<String, WebRtcPipeline> entry : pipelines.entrySet()) {
+            if (!entry.getValue().isPlaying()) {
+                log.info("Pipeline with id {} is currently offline. Trying to reconnect...", entry.getKey());
+                entry.getValue().release();
+                entry.getValue().construct();
+            }
+        }
     }
     
     

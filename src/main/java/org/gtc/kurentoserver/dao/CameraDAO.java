@@ -1,16 +1,16 @@
-package org.gtc.kurentoserver.services.restful.repository;
+package org.gtc.kurentoserver.dao;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.gtc.kurentoserver.services.restful.entities.Camera;
+import org.gtc.kurentoserver.entities.Camera;
 import org.springframework.stereotype.Component;
 
 /**
  * Camera Repository 
  */
 @Component
-public class CameraRepository {
+public class CameraDAO {
     private List<Camera> cameras = new ArrayList<>();
 
     public void add(Camera camera) {

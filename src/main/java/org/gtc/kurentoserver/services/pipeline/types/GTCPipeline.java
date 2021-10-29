@@ -1,10 +1,11 @@
-package org.gtc.kurentoserver.pipeline.types;
+package org.gtc.kurentoserver.services.pipeline.types;
 
-import org.gtc.kurentoserver.pipeline.KurentoPipeline;
+import org.gtc.kurentoserver.entities.Camera;
 import org.gtc.kurentoserver.services.orion.publisher.CarDetectionPublisher;
-import org.gtc.kurentoserver.services.restful.entities.Camera;
+import org.gtc.kurentoserver.services.pipeline.WebRtcPipeline;
 import org.kurento.client.KurentoClient;
 import org.kurento.client.MediaElement;
+import org.kurento.client.MediaFlowState;
 import org.kurento.client.PlayerEndpoint;
 import org.kurento.module.cardetector.CarDetector;
 import org.kurento.module.recordermodule.RecorderModule;
@@ -16,16 +17,17 @@ import org.slf4j.LoggerFactory;
 /**
  * Pipeline to visualice a camera
  */
-public class CameraViewerPipeline extends KurentoPipeline {
-    private static final Logger log = LoggerFactory.getLogger(CameraViewerPipeline.class);
+public class GTCPipeline extends WebRtcPipeline {
+    private static final Logger log = LoggerFactory.getLogger(GTCPipeline.class);
     
     private Camera camera;
     private PlayerEndpoint playerEndpoint;
     private CarDetectionPublisher carPublisher = new CarDetectionPublisher(new OrionConnectorConfiguration());
     private CarDetector carDetector;
     private RecorderModule recorderModule;
+    private boolean isPlaying;
 
-    public CameraViewerPipeline(KurentoClient kurentoClient, Camera camera) {
+    public GTCPipeline(KurentoClient kurentoClient, Camera camera) {
         super(kurentoClient);
         this.camera = camera;
     }
@@ -34,6 +36,13 @@ public class CameraViewerPipeline extends KurentoPipeline {
     public void construct() {
         log.info("Constructing ViewerPipeline of camera : {}", camera.getId());
         playerEndpoint = new PlayerEndpoint.Builder(pipe, camera.getUrlWithCredentials()).build();
+
+        playerEndpoint.addErrorListener(event -> {
+            if (isPlaying) {
+                log.info("Pipeline {} offline. No video playing...", camera.getId());
+                isPlaying = false;
+            }
+        });
 
         MediaElement last = playerEndpoint;
 
@@ -72,12 +81,24 @@ public class CameraViewerPipeline extends KurentoPipeline {
         }
 
         playerEndpoint.play();
+        isPlaying = true;
         setEndHubSource(last);
+    }
+
+    @Override
+    public boolean isPlaying() {
+        return isPlaying;
     }
 
     @Override
     public void release() {
         playerEndpoint.release();
+        if (carDetector!=null)
+            carDetector.release();
+        
+        if (recorderModule != null ) 
+            recorderModule.release();
+
         super.release();
     }
     

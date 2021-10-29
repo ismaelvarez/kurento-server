@@ -3,27 +3,13 @@ package org.gtc.kurentoserver;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import org.apache.commons.io.IOUtils;
-import org.gtc.kurentoserver.services.orion.entities.OrionNotification;
+import org.gtc.kurento.orion.notification.OrionNotification;
+import org.gtc.kurentoserver.entities.Camera;
 import org.gtc.kurentoserver.services.orion.notification.CameraOrionNotificationParser;
-import org.gtc.kurentoserver.services.restful.entities.Camera;
 import org.json.JSONException;
 import org.junit.jupiter.api.Test;
 

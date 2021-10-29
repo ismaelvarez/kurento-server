@@ -13,9 +13,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import org.gtc.kurento.orion.notification.OrionNotification;
+import org.gtc.kurentoserver.entities.Camera;
 import org.gtc.kurentoserver.services.orion.OrionNotificationParser;
-import org.gtc.kurentoserver.services.orion.entities.OrionNotification;
-import org.gtc.kurentoserver.services.restful.entities.Camera;
 
 public class CameraOrionNotificationParser implements OrionNotificationParser<Camera> {
 

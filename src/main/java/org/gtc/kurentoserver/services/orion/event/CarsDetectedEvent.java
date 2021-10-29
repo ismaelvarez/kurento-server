@@ -1,4 +1,4 @@
-package org.gtc.kurentoserver.services.orion.entities;
+package org.gtc.kurentoserver.services.orion.event;
 
 import org.kurento.orion.connector.entities.event.MediaEvent;
 

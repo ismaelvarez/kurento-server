@@ -1,6 +1,6 @@
 package org.gtc.kurentoserver.services.websocket;
 
-import org.gtc.kurentoserver.handler.WebRTCProtocolHandler;
+import org.gtc.kurentoserver.services.websocket.handler.WebRTCProtocolHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;

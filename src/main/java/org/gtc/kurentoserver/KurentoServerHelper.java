@@ -2,10 +2,10 @@ package org.gtc.kurentoserver;
 
 import javax.annotation.PostConstruct;
 
-import org.gtc.kurentoserver.pipeline.PipelineManager;
-import org.gtc.kurentoserver.pipeline.types.CameraViewerPipeline;
-import org.gtc.kurentoserver.services.restful.entities.Camera;
-import org.gtc.kurentoserver.services.restful.repository.CameraRepository;
+import org.gtc.kurentoserver.dao.CameraDAO;
+import org.gtc.kurentoserver.entities.Camera;
+import org.gtc.kurentoserver.services.pipeline.PipelineManager;
+import org.gtc.kurentoserver.services.pipeline.types.GTCPipeline;
 import org.kurento.client.KurentoClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +25,7 @@ public class KurentoServerHelper {
 	@Autowired
 	private PipelineManager manager;
 	@Autowired
-	private CameraRepository repository;
+	private CameraDAO repository;
 
 	@Value( "${kurento.images.location}" )
     public static String kurentoImagesLocation;
@@ -38,7 +38,7 @@ public class KurentoServerHelper {
 	public void init() {
 		log.trace("KurentoServerHelper::init()");
 		for (Camera camera : repository.getAll()) {
-			manager.add(camera.getId(), new CameraViewerPipeline(kurentoClient, camera));
+			manager.add(camera.getId(), new GTCPipeline(kurentoClient, camera));
 		}
 	}
 
@@ -57,7 +57,7 @@ public class KurentoServerHelper {
 	 */
 	public void createPipelineWithCamera(Camera camera) {
 		log.trace("KurentoServerHelper::createPipelineWithCamera({})", camera);
-		manager.add(camera.getId(), new CameraViewerPipeline(kurentoClient, camera));
+		manager.add(camera.getId(), new GTCPipeline(kurentoClient, camera));
 	}
 
 
@@ -87,7 +87,6 @@ public class KurentoServerHelper {
 	public void deletePipelineOfCamera(String cameraId) {
 		log.trace("KurentoServerHelper::deletePipelineOfCamera({})", cameraId);
 		manager.disconnectPipeline(cameraId);
-		log.info("Pipeline with id {} disconnected...", cameraId);
 	}
 
 	/**

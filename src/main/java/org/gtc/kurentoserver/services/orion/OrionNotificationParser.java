@@ -1,6 +1,6 @@
 package org.gtc.kurentoserver.services.orion;
 
-import org.gtc.kurentoserver.services.orion.notification.OrionNotification;
+import org.gtc.kurento.orion.notification.OrionNotification;
 
 public interface OrionNotificationParser<T> {
 

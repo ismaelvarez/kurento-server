@@ -1,4 +1,4 @@
-package org.gtc.kurentoserver.pipeline;
+package org.gtc.kurentoserver.services.pipeline;
 
 import java.io.IOException;
 import java.util.Map;
@@ -19,7 +19,7 @@ import org.kurento.client.WebRtcEndpoint;
  * Important: In the implementation of the construct method must specific the end media
  * element of the pipeline, using setEndHubSource
  */
-public abstract class KurentoPipeline {
+public abstract class WebRtcPipeline implements Pipeline {
     protected KurentoClient kurento;
 
     protected MediaPipeline pipe;
@@ -29,7 +29,7 @@ public abstract class KurentoPipeline {
 
     private MediaElement lastElement;
 
-    public KurentoPipeline(KurentoClient kurentoClient) {
+    public WebRtcPipeline(KurentoClient kurentoClient) {
         this.kurento = kurentoClient;
         pipe = this.kurento.createMediaPipeline();
         endHub = new DispatcherOneToMany.Builder(pipe).build();
@@ -98,15 +98,11 @@ public abstract class KurentoPipeline {
     /**
      * Release all WebRTCEndpoints
      */
+    @Override
     public void release() {
         for (WebRtcEndpoint webRtcEndpoint : webRtcEndpoints.values()) {
             webRtcEndpoint.release();
         }
         webRtcEndpoints.clear();
     }
-
-    /**
-     * Implementation of the media elements of the pipeline
-     */
-    public abstract void construct();
 }

@@ -1,4 +1,4 @@
-package org.gtc.kurentoserver.services.restful.entities;
+package org.gtc.kurentoserver.entities;
 
 import java.util.ArrayList;
 import java.util.List;

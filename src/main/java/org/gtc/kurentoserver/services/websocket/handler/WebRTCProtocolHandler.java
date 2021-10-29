@@ -1,4 +1,4 @@
-package org.gtc.kurentoserver.handler;
+package org.gtc.kurentoserver.services.websocket.handler;
 
 import java.io.IOException;
 
@@ -6,7 +6,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 
-import org.gtc.kurentoserver.pipeline.PipelineManager;
+import org.gtc.kurentoserver.services.pipeline.PipelineManager;
 import org.kurento.client.IceCandidate;
 import org.kurento.client.MediaPipeline;
 import org.kurento.client.WebRtcEndpoint;
