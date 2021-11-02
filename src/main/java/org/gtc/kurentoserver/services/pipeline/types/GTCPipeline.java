@@ -40,7 +40,14 @@ public class GTCPipeline extends WebRtcPipeline {
         playerEndpoint.addErrorListener(event -> {
             if (isPlaying) {
                 log.info("Pipeline {} offline. No video playing...", camera.getId());
-                isPlaying = false;
+                stop();
+            }
+        });
+
+        playerEndpoint.addEndOfStreamListener(event -> {
+            if (isPlaying) {
+                log.info("Pipeline {} offline. No video playing...", camera.getId());
+                stop();
             }
         });
 
@@ -100,6 +107,10 @@ public class GTCPipeline extends WebRtcPipeline {
             recorderModule.release();
 
         super.release();
+    }
+
+    private synchronized void stop() {
+        isPlaying = false;
     }
     
 }
