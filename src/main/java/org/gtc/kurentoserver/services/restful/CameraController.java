@@ -94,33 +94,46 @@ public class CameraController {
      */
     @CrossOrigin(origins = "0.0.0.0:1026")
     @PostMapping("/cameras")
-    void notification(@RequestBody @Validated String payload) throws JsonMappingException, JsonProcessingException {
+    void notification(@RequestBody @Validated String payload) {
         log.trace("CameraController::notification({})", payload);
 
-    	OrionNotification<Camera> notification = notificationParser.getEntitiesFrom(payload);
-
-        if (!notification.getId().equals(ocb.getSubscriptionId())) 
+    	OrionNotification<Camera> notification;
+        try {
+            notification = notificationParser.getEntitiesFrom(payload);
+            if (!notification.getId().equals(ocb.getSubscriptionId())) 
             return;
         
-        log.info("New notification from Orion: {}", payload);
-        for (Camera camera : notification.getEntities()) {
-            if (repository.contains(camera.getId())) {
-                repository.delete(camera);
-            }
-            
-            repository.add(camera);
-
-            if (camera.getCameraType().toLowerCase().equals(STREAM)) {
-                if (!kurentoServerHelper.contains(camera.getId())) {
-                    log.info("Created {}", camera.toString());
-                    kurentoServerHelper.createPipelineWithCamera(camera);
-                } else {
-                    log.info("Updated {}", camera.toString());
-                    kurentoServerHelper.reloadPipelineOfCamera(camera);
+            log.info("New notification from Orion: {}", payload);
+            for (Camera camera : notification.getEntities()) {
+                if (repository.contains(camera.getId())) {
+                    repository.delete(camera);
                 }
+                
+                repository.add(camera);
+
+                if (camera.getCameraType().toLowerCase().equals(STREAM)) {
+                    if (!kurentoServerHelper.contains(camera.getId())) {
+                        log.info("Created {}", camera.toString());
+                        kurentoServerHelper.createPipelineWithCamera(camera);
+                    } else {
+                        log.info("Updated {}", camera.toString());
+                        kurentoServerHelper.reloadPipelineOfCamera(camera);
+                    }
+                } else {
+                    if (kurentoServerHelper.contains(camera.getId())) {
+                        kurentoServerHelper.deletePipelineOfCamera(camera.getId());
+                    }
+                }
+                
             }
-            
+        } catch (JsonMappingException e) {
+            log.error("Error parsing notification {}. \n Exception {}", e.getMessage());
+        } catch (JsonProcessingException e) {
+
+            log.error("Error parsing notification {}. \n Exception {}", e.getMessage());
         }
+
+        
         
     }
 

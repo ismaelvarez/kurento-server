@@ -31,53 +31,57 @@ public class WebRTCProtocolHandler extends TextWebSocketHandler {
 
   
   @Override
-  public void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
+  public void handleTextMessage(WebSocketSession session, TextMessage message) {
     //Message sended by web client
-    JsonObject jsonMessage = gson.fromJson(message.getPayload(), JsonObject.class);
+    try {
+      JsonObject jsonMessage = gson.fromJson(message.getPayload(), JsonObject.class);
 
-    log.debug("Incoming message: {}", jsonMessage);
-    
+      log.debug("Incoming message: {}", jsonMessage);
       
-    switch (jsonMessage.get("id").getAsString()) {
-      case "sdpOffer":
-        try {
-          if (jsonMessage.has("idCam") && !jsonMessage.get("idCam").isJsonNull() ) {
-            createSDPAnswer(session, jsonMessage);
-          } else {
-            sendError(session, "idCam no specified in the message");
-          }
-          
-        } catch (Throwable t) {
-          sendError(session, t.getMessage());
-        }
-        break;
-
-      case "stop":
-        try {
-            stop(session);
-        } catch (Throwable t) {
-            sendError(session, t.getMessage());
-        }
-        break;
-
-      case "onIceCandidate": {
-        JsonObject candidate = jsonMessage.get("candidate").getAsJsonObject();
-
-        IceCandidate cand = new IceCandidate(candidate.get("candidate").getAsString(),
-            candidate.get("sdpMid").getAsString(), candidate.get("sdpMLineIndex").getAsInt());
-
-        if (jsonMessage.has("idCam")) {
-          String idCam = jsonMessage.get("idCam").getAsString();
-          pipelineManager.get(idCam).addCandidate(cand, session.getId());
-        }
-        break;
-      }
-
-      default:
-        sendError(session, "Invalid message with id " + jsonMessage.get("id").getAsString());
-        break;
         
-    } 
+      switch (jsonMessage.get("id").getAsString()) {
+        case "sdpOffer":
+          try {
+            if (jsonMessage.has("idCam") && !jsonMessage.get("idCam").isJsonNull() ) {
+              createSDPAnswer(session, jsonMessage);
+            } else {
+              sendError(session, "idCam no specified in the message");
+            }
+            
+          } catch (Throwable t) {
+            sendError(session, t.getMessage());
+          }
+          break;
+
+        case "stop":
+          try {
+              stop(session);
+          } catch (Throwable t) {
+              sendError(session, t.getMessage());
+          }
+          break;
+
+        case "onIceCandidate": {
+          JsonObject candidate = jsonMessage.get("candidate").getAsJsonObject();
+
+          IceCandidate cand = new IceCandidate(candidate.get("candidate").getAsString(),
+              candidate.get("sdpMid").getAsString(), candidate.get("sdpMLineIndex").getAsInt());
+
+          if (jsonMessage.has("idCam")) {
+            String idCam = jsonMessage.get("idCam").getAsString();
+            pipelineManager.get(idCam).addCandidate(cand, session.getId());
+          }
+          break;
+        }
+
+        default:
+          sendError(session, "Invalid message with id " + jsonMessage.get("id").getAsString());
+          break;
+          
+      } 
+    } catch (Exception ex) {
+      log.error("Error handling text message in session {}", session.getId());
+    }
   }
 
   /**

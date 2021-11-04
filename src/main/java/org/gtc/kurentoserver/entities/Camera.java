@@ -21,6 +21,10 @@ public class Camera {
     @JsonIgnoreProperties(ignoreUnknown = true) 
     private String cameraType = "Stream";
 
+    //TODO check if this information should be in Camera Model
+    private int order;
+    private String panoramic;
+
     @JsonProperty(access = Access.WRITE_ONLY)
     private String password;
     @JsonSerialize(keyAs = String.class, contentAs = Boolean.class)
@@ -33,6 +37,22 @@ public class Camera {
         this.name = name;
         this.description = description;
         this.url = url;
+    }
+
+    public String getPanoramic() {
+        return panoramic;
+    }
+
+    public void setPanoramic(String panoramic) {
+        this.panoramic = panoramic;
+    }
+
+    public int getOrder() {
+        return order;
+    }
+
+    public void setOrder(int order) {
+        this.order = order;
     }
 
     public String getUser() {
