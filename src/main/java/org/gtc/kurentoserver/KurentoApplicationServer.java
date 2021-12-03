@@ -14,7 +14,6 @@ import org.springframework.web.socket.config.annotation.EnableWebSocket;
 
 @SpringBootApplication
 @EnableWebSocket
-@ComponentScan
 public class KurentoApplicationServer {
 	@Value("${kurento.address}")
 	private String kurentoAddress;

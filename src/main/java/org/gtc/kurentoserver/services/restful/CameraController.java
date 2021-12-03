@@ -89,7 +89,6 @@ public class CameraController {
     /**
      * Orion notification path. Creates or updates cameras
      * @param payload Orion notification
-     * @throws JsonMappingException
      * @throws JsonProcessingException
      */
     @CrossOrigin(origins = "0.0.0.0:1026")
@@ -111,12 +110,12 @@ public class CameraController {
                 
                 repository.add(camera);
 
-                if (camera.getCameraType().toLowerCase().equals(STREAM)) {
+                if (camera.getCameraType().equalsIgnoreCase(STREAM)) {
                     if (!kurentoServerHelper.contains(camera.getId())) {
-                        log.info("Created {}", camera.toString());
+                        log.info("Created {}", camera);
                         kurentoServerHelper.createPipelineWithCamera(camera);
                     } else {
-                        log.info("Updated {}", camera.toString());
+                        log.info("Updated {}", camera);
                         kurentoServerHelper.reloadPipelineOfCamera(camera);
                     }
                 } else {
@@ -126,15 +125,9 @@ public class CameraController {
                 }
                 
             }
-        } catch (JsonMappingException e) {
-            log.error("Error parsing notification {}. \n Exception {}", e.getMessage());
         } catch (JsonProcessingException e) {
-
-            log.error("Error parsing notification {}. \n Exception {}", e.getMessage());
+            log.error("Error parsing notification {}.", e.getMessage());
         }
-
-        
-        
     }
 
     /**
