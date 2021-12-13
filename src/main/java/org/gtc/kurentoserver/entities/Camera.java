@@ -7,6 +7,8 @@ import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
@@ -29,6 +31,9 @@ public class Camera {
     private String password;
     @JsonSerialize(keyAs = String.class, contentAs = Boolean.class)
     private Map<String, Boolean> kurentoConfig;
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @JsonProperty(access = Access.READ_ONLY)
+    boolean isRestrictive;
 
     public Camera(){}
 
@@ -37,6 +42,15 @@ public class Camera {
         this.name = name;
         this.description = description;
         this.url = url;
+    }
+
+    @JsonProperty(access = Access.WRITE_ONLY)
+    public boolean isRestrictive() {
+        return !isRestrictive;
+    }
+
+    public void setRestrictive(boolean restrictive) {
+        isRestrictive = restrictive;
     }
 
     public String getPanoramic() {
@@ -168,6 +182,6 @@ public class Camera {
         return "Camera [description=" + description + ", group=" + group + ", id=" + id + ", name=" + name + "]";
     }
 
-    
-    
+
+
 }

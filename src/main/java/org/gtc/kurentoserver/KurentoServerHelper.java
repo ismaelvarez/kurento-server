@@ -2,8 +2,12 @@ package org.gtc.kurentoserver;
 
 import javax.annotation.PostConstruct;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.io.IOUtils;
 import org.gtc.kurentoserver.dao.CameraDAO;
 import org.gtc.kurentoserver.entities.Camera;
+import org.gtc.kurentoserver.services.orion.OrionContextBroker;
+import org.gtc.kurentoserver.services.orion.parser.OrionCameraEntityParser;
 import org.gtc.kurentoserver.services.pipeline.PipelineManager;
 import org.gtc.kurentoserver.services.pipeline.types.GTCPipeline;
 import org.kurento.client.KurentoClient;
@@ -11,7 +15,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.StandardPasswordEncoder;
 import org.springframework.stereotype.Component;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 /**
  * Kurento Configuration Module
@@ -26,6 +39,8 @@ public class KurentoServerHelper {
 	private PipelineManager manager;
 	@Autowired
 	private CameraDAO repository;
+	@Autowired
+	private OrionContextBroker ocb;
 
 	@Value( "${kurento.images.location}" )
     public static String kurentoImagesLocation;
@@ -37,8 +52,14 @@ public class KurentoServerHelper {
 	@PostConstruct
 	public void init() {
 		log.trace("KurentoServerHelper::init()");
-		for (Camera camera : repository.getAll()) {
-			manager.add(camera.getId(), new GTCPipeline(kurentoClient, camera));
+		try {
+			for (Camera c : ocb.getCameras()) {
+				repository.add(c);
+				if (c.getCameraType().equalsIgnoreCase("stream"))
+					createPipelineWithCamera(c);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -95,4 +116,5 @@ public class KurentoServerHelper {
 	public String getKurentoImagesLocation() {
 		return kurentoImagesLocation;
 	}
+
 }

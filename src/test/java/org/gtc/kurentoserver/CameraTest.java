@@ -6,10 +6,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.List;
 
-import org.gtc.kurento.orion.notification.OrionNotification;
 import org.gtc.kurentoserver.entities.Camera;
-import org.gtc.kurentoserver.services.orion.notification.CameraOrionNotificationParser;
+import org.gtc.kurentoserver.services.orion.parser.OrionCameraEntityParser;
 import org.json.JSONException;
 import org.junit.jupiter.api.Test;
 
@@ -22,21 +22,20 @@ public class CameraTest {
         InputStream f = getClass().getResourceAsStream("Notification.json");
         
         try {
-
             String everything = readFromInputStream(f);
-            CameraOrionNotificationParser parser = new CameraOrionNotificationParser();
+            OrionCameraEntityParser parser = new OrionCameraEntityParser();
 
-            OrionNotification<Camera> notification = parser.getEntitiesFrom(everything);
+            List<Camera> cameras = parser.getEntitiesFrom(everything);
     
-            assertEquals(notification.getId(), "57458eb60962ef754e7c0998");
+            assertEquals(cameras.size(), 1);
     
-            assertEquals(1, notification.getEntities().size());
-    
-            Camera c = notification.getEntities().get(0);
-    
-            assertEquals(c.getCameraType(), "Static");
+            Camera c = cameras.get(0);
 
-        } catch (IOException e) {
+            assertEquals("interior", c.getId());
+    
+            assertEquals(c.getCameraType(), "stream");
+
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

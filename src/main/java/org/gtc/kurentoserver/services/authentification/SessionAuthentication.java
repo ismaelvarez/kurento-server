@@ -1,7 +1,6 @@
 package org.gtc.kurentoserver.services.authentification;
 
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
 
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
@@ -25,11 +24,15 @@ public class SessionAuthentication
         sessionsLogged.put(sessionId, LocalTime.now());
     }
 
+    public LocalTime getTimeAlive(String sessionId) {
+        return sessionsLogged.getOrDefault(sessionId, null);
+    }
+
     public void logOut(String sessionId) {
         sessionsLogged.remove(sessionId);
     }
 
-
+    @Scheduled(fixedRate = 3600000)
     public void refresh() {
         sessionsLogged.forEach((key, value) -> {
             if (ChronoUnit.HOURS.between(LocalTime.now(), value) > 6) {

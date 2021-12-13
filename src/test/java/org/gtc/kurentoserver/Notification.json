@@ -1,42 +1,57 @@
 {
-    "data" : [{
-    "id":       "Interna",
-    "type":     "Camera",
-    "cameraType": {
-      "type":    "String",
-      "value":   "Static"
+  "id":"interior",
+  "type":"Camera",
+  "cameraType": {
+    "type":"String",
+    "value":"stream",
+    "metadata":{}
+  },
+  "description": {
+    "type":"String",
+    "value":"Interior camera",
+    "metadata":{}
+  },
+  "group": {
+    "type":"String",
+    "value":["Interior-GTC"],
+    "metadata":{}
+  },
+  "kurentoConfig": {
+    "type":"Boolean",
+    "value": {
+      "recorder":false,
+      "carDetection":false
     },
-    "name": {
-      "type":    "String",
-      "value":   "Cámara Interna"
-    },
-    "group":{
-      "type":    "ArrayList",
-      "value":   ["Dome"]
-    },
-    "url": {
-      "type":    "String",
-      "value":   "http://161.72.94.23/mjpg/video.mjpg"
-    },
-    "user": {
-      "type":    "String",
-      "value":   "operador"
-    },
-    "password": {
-      "type":     "String",
-      "value" :    "camara"
-    },
-    "kurentoConfig": {
-      "type": "Map",
-      "value": {
-        "recorder":    false,
-        "carDetection":  false
-      }
-    },
-    "description": {
-      "type":   "String",
-      "value":  "hola ....."
-    }
-  }],
-  "subscriptionId" : "57458eb60962ef754e7c0998"
+    "metadata":{}
+  },
+  "name": {
+    "type":"String",
+    "value":"Interior",
+    "metadata":{}
+  },
+  "order": {
+    "type":"Number",
+    "value":"1",
+    "metadata":{}
+  },
+  "panoramic": {
+    "type":"String",
+    "value":"None",
+    "metadata":{}
+  },
+  "password": {
+    "type":"String",
+    "value":"camara",
+    "metadata":{}
+  },
+  "url": {
+    "type":"String",
+    "value":"http://161.72.94.23/mjpg/video.mjpg",
+    "metadata":{}
+  },
+  "user": {
+    "type":"String",
+    "value":"operador",
+    "metadata":{}
+  }
 }

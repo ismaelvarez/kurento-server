@@ -1,6 +1,7 @@
 package org.gtc.kurentoserver.services.pipeline.types;
 
 import org.gtc.kurentoserver.entities.Camera;
+import org.gtc.kurentoserver.services.exceptions.PipelineErrorException;
 import org.gtc.kurentoserver.services.orion.publisher.CarDetectionPublisher;
 import org.gtc.kurentoserver.services.pipeline.WebRtcPipeline;
 import org.kurento.client.KurentoClient;
@@ -33,7 +34,7 @@ public class GTCPipeline extends WebRtcPipeline {
     }
 
     @Override
-    public void construct() {
+    public void construct() throws PipelineErrorException {
         log.info("Constructing ViewerPipeline of camera : {}", camera.getId());
         playerEndpoint = new PlayerEndpoint.Builder(pipe, camera.getUrlWithCredentials()).build();
 

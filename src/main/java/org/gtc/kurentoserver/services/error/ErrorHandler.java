@@ -17,14 +17,6 @@ public class ErrorHandler {
     @Autowired
     private OrionContextBroker orion;
 
-    /**
-     * Unsubscribe to Orion if an exception is throwed
-     * @param ex
-     */
-    @ExceptionHandler(value= Exception.class)
-    public void onErrorDeleteSubscription(Exception ex) {
-        log.error("An exception has ocurred: {}",ex.getMessage());
-        orion.unsubscribe();
-    }
+
     
 }

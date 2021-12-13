@@ -7,30 +7,23 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
+import javax.persistence.EntityExistsException;
+import javax.persistence.EntityNotFoundException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 
-import org.gtc.kurento.orion.notification.OrionNotification;
 import org.gtc.kurentoserver.KurentoServerHelper;
 import org.gtc.kurentoserver.dao.CameraDAO;
 import org.gtc.kurentoserver.entities.Camera;
+import org.gtc.kurentoserver.services.authentification.SessionAuthentication;
+import org.gtc.kurentoserver.services.exceptions.NotAuthenticatedException;
 import org.gtc.kurentoserver.services.orion.OrionContextBroker;
-import org.gtc.kurentoserver.services.orion.notification.CameraOrionNotificationParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * Rest service to provide camera information
@@ -44,13 +37,15 @@ public class CameraController {
 
     @Autowired
     private KurentoServerHelper kurentoServerHelper;
+
     @Autowired
     private OrionContextBroker ocb;
-
-    private CameraOrionNotificationParser notificationParser = new CameraOrionNotificationParser();
     
     @Autowired
     private CameraDAO repository;
+
+    @Autowired
+    private SessionAuthentication sessions;
 
     @PostConstruct
     public void init() {
@@ -62,16 +57,19 @@ public class CameraController {
      * @param groups If provided, list all cameras with that group
      * @return list of cameras
      */
-	@CrossOrigin(origins = "*")
     @GetMapping("/cameras")
     @ResponseBody
-    List<Camera> all(@RequestParam Optional<String> groups) {
+    List<Camera> all(@RequestParam Optional<String> groups,
+                     @RequestHeader(value="session-id", required = false) String sessionId) {
+
+        boolean isLogged = sessions.isLogged(sessionId);
         log.trace("CameraController::all()");
         if (groups.isPresent()) {
             List<String> list = Arrays.asList(groups.get().split(","));
-            return repository.getAll().stream().filter(c-> !Collections.disjoint(c.getGroup(), list)).collect(Collectors.toList());
+            return repository.getAll().stream().filter(c-> !Collections.disjoint(c.getGroup(), list)).filter(c-> isLogged || c.isRestrictive()).collect(Collectors.toList());
         }
-        return repository.getAll();
+
+        return repository.getAll().stream().filter(c-> isLogged || c.isRestrictive()).collect(Collectors.toList());
     }
 
     /**
@@ -79,66 +77,96 @@ public class CameraController {
      * @param id Id of camera
      * @return camera
      */
-    @CrossOrigin(origins = "*")
-    @GetMapping("/camera/{id}")
+    @GetMapping("/cameras/{id}")
     Camera getCamera(@PathVariable("id") String id) {
         log.trace("CameraController::all()");
+        if (!repository.contains(id))
+            throw new EntityNotFoundException();
         return repository.getCamera(id);
-    }
-
-    /**
-     * Orion notification path. Creates or updates cameras
-     * @param payload Orion notification
-     * @throws JsonProcessingException
-     */
-    @CrossOrigin(origins = "0.0.0.0:1026")
-    @PostMapping("/cameras")
-    void notification(@RequestBody @Validated String payload) {
-        log.trace("CameraController::notification({})", payload);
-
-    	OrionNotification<Camera> notification;
-        try {
-            notification = notificationParser.getEntitiesFrom(payload);
-            if (!notification.getId().equals(ocb.getSubscriptionId())) 
-            return;
-        
-            log.info("New notification from Orion: {}", payload);
-            for (Camera camera : notification.getEntities()) {
-                if (repository.contains(camera.getId())) {
-                    repository.delete(camera);
-                }
-                
-                repository.add(camera);
-
-                if (camera.getCameraType().equalsIgnoreCase(STREAM)) {
-                    if (!kurentoServerHelper.contains(camera.getId())) {
-                        log.info("Created {}", camera);
-                        kurentoServerHelper.createPipelineWithCamera(camera);
-                    } else {
-                        log.info("Updated {}", camera);
-                        kurentoServerHelper.reloadPipelineOfCamera(camera);
-                    }
-                } else {
-                    if (kurentoServerHelper.contains(camera.getId())) {
-                        kurentoServerHelper.deletePipelineOfCamera(camera.getId());
-                    }
-                }
-                
-            }
-        } catch (JsonProcessingException e) {
-            log.error("Error parsing notification {}.", e.getMessage());
-        }
     }
 
     /**
      * Delete camera
      * @param id id of camera
      */
-	@CrossOrigin(origins = "*")
-    @DeleteMapping("/camera/{id}")
-    void deleteCamera(@PathVariable("id") String id) {
+    @DeleteMapping("/cameras/{id}")
+    @CrossOrigin("*")
+    void deleteCamera(@RequestHeader(value="session-id", required = false) String sessionId, @PathVariable("id") String id) {
         log.trace("CameraController::deleteCamera({})", id);
-        repository.delete(id);
-        kurentoServerHelper.deletePipelineOfCamera(id);
+
+        if (!sessions.isLogged(sessionId))
+            throw new NotAuthenticatedException();
+
+        if (!repository.contains(id)) {
+            throw new EntityNotFoundException();
+        }
+
+        try {
+            if (ocb.deleteCamera(id)) {
+                repository.delete(id);
+                kurentoServerHelper.deletePipelineOfCamera(id);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @PostMapping("/cameras")
+    @ResponseBody
+    @CrossOrigin("*")
+    void create(@RequestHeader(value="session-id", required = false) String sessionId, @RequestBody @Validated Camera camera) {
+        log.trace("CameraController::create()");
+        log.info("Create camera {}; Session={}", camera.getId(), sessionId);
+        if (!sessions.isLogged(sessionId))
+            throw new NotAuthenticatedException();
+
+        if (repository.contains(camera.getId())) {
+            throw new EntityExistsException();
+        }
+
+        try {
+            if (ocb.createCamera(camera)) {
+                repository.add(camera);
+                if (camera.getCameraType().equalsIgnoreCase(STREAM)) {
+                    kurentoServerHelper.createPipelineWithCamera(camera);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
+    @PatchMapping("/cameras")
+    @CrossOrigin("*")
+    void update(@RequestHeader(value="session-id", required = false) String sessionId, @RequestBody @Validated Camera camera) {
+        log.trace("CameraController::update()");
+
+        if (!sessions.isLogged(sessionId))
+            throw new NotAuthenticatedException();
+
+        if (!repository.contains(camera.getId())) {
+            throw new EntityExistsException();
+        }
+
+        Camera camera1 = repository.getCamera(camera.getId());
+
+        camera.setOrder(camera1.getOrder());
+
+        try {
+            if (ocb.updateCamera(camera)) {
+                repository.update(camera);
+                if (kurentoServerHelper.contains(camera.getId())) {
+                    kurentoServerHelper.deletePipelineOfCamera(camera);
+                }
+                if (camera.getCameraType().equalsIgnoreCase(STREAM)) {
+                    if (kurentoServerHelper.contains(camera.getId()))
+                        kurentoServerHelper.createPipelineWithCamera(camera);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

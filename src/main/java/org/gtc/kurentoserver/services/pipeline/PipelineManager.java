@@ -33,8 +33,12 @@ public class PipelineManager {
      */
     public void add(String id, WebRtcPipeline pipeline) {
         if (!pipelines.containsKey(id)) {
-            pipelines.put(id, pipeline);
-            pipeline.construct();
+            try {
+                pipelines.put(id, pipeline);
+                pipeline.construct();
+            } catch (Exception e) {
+                pipelines.remove(id);
+            }
         }
     }
 
@@ -87,7 +91,11 @@ public class PipelineManager {
             if (!entry.getValue().isPlaying()) {
                 log.info("Pipeline with id {} is currently offline. Trying to reconnect...", entry.getKey());
                 entry.getValue().release();
-                entry.getValue().construct();
+                try {
+                    entry.getValue().construct();
+                } catch (Exception e) {
+                    log.error("Pipeline with id {} could not be created", entry.getKey());
+                }
             }
         }
     }
