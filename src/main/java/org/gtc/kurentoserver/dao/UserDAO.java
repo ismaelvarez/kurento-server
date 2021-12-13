@@ -20,7 +20,7 @@ public class UserDAO {
 
     private final List<User> users = new ArrayList<>();
 
-    @Value( "${user.list}" )
+    @Value( "${server.users}" )
     private String userListPath;
 
     @PostConstruct
