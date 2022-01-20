@@ -9,11 +9,23 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.gtc.kurentoserver.entities.Camera;
 import org.gtc.kurentoserver.services.orion.OrionEntitiesParser;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 public class OrionCameraEntityParser implements OrionEntitiesParser<Camera> {
+
+    private Map<String, String> SPECIAL_CHARACTERS = new HashMap<String, String>() {{
+        put("<", "%3C");
+        put(">", "%3E");
+        put("\"", "%22");
+        put("'", "%27");
+        put("=", "%3D");
+        put("(", "%28");
+        put(")", "%29");
+    }};
+
     @Override
     public List<Camera> getEntitiesFrom(String entities) throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
@@ -40,7 +52,7 @@ public class OrionCameraEntityParser implements OrionEntitiesParser<Camera> {
             }
             list.add(camera);
         }
-        return objectMapper.readValue(list.toString(), type);
+        return objectMapper.readValue(fromURLEncoding(list.toString()), type);
     }
 
     @Override
@@ -50,7 +62,7 @@ public class OrionCameraEntityParser implements OrionEntitiesParser<Camera> {
         try {
 
             return "{\n" +
-                    "\"id\": \""+entity.getId()+"\",\n" +
+                    "\"id\": \""+toURLEncoding(entity.getId())+"\",\n" +
                     "\"type\": \"Camera\",\n" +
                     "\"cameraType\": {\n" +
                     "\"type\": \"String\",\n" +
@@ -66,7 +78,7 @@ public class OrionCameraEntityParser implements OrionEntitiesParser<Camera> {
                     "},\n" +
                     "\"name\": {\n" +
                     "\"type\": \"String\",\n" +
-                    "\"value\": \""+entity.getName()+"\"\n" +
+                    "\"value\": \""+toURLEncoding(entity.getName())+"\"\n" +
                     "},\n" +
                     "\"group\":{\n" +
                     "\"type\": \"ArrayList\",\n" +
@@ -74,7 +86,7 @@ public class OrionCameraEntityParser implements OrionEntitiesParser<Camera> {
                     "},\n" +
                     "\"url\": {\n" +
                     "\"type\": \"String\",\n" +
-                    "\"value\": \""+entity.getUrl()+"\"\n" +
+                    "\"value\": \""+toURLEncoding(entity.getUrl())+"\"\n" +
                     "},\n" +
                     "\"user\": {\n" +
                     "\"type\": \"String\",\n" +
@@ -98,4 +110,21 @@ public class OrionCameraEntityParser implements OrionEntitiesParser<Camera> {
             return "";
         }
     }
+
+    private String fromURLEncoding(String toEncode) {
+        String encoded = toEncode;
+        for (Map.Entry<String, String> entry : SPECIAL_CHARACTERS.entrySet()) {
+            encoded = encoded.replace(entry.getValue(), entry.getKey());
+        }
+        return encoded;
+    }
+
+    private String toURLEncoding(String toEncode) {
+        String encoded = toEncode;
+        for (Map.Entry<String, String> entry : SPECIAL_CHARACTERS.entrySet()) {
+            encoded = encoded.replace(entry.getKey(), entry.getValue());
+        }
+        return encoded;
+    }
+
 }
