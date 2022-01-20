@@ -14,13 +14,24 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Orion Context Broker subscription component
  */
 @Component
 public class OrionContextBroker {
+    private Map<String, String> SPECIAL_CHARACTERS = new HashMap<String, String>() {{
+        put("<", "%3C");
+        put(">", "%3E");
+        put("\"", "%22");
+        put("'", "%27");
+        put("=", "%3D");
+        put("(", "%28");
+        put(")", "%29");
+    }};
     private static final Logger log = LoggerFactory.getLogger(OrionContextBroker.class);
     OrionCameraEntityParser orionCameraEntityParser = new OrionCameraEntityParser();
 
@@ -47,12 +58,12 @@ public class OrionContextBroker {
     public boolean createCamera(Camera camera) throws Exception {
         URL url = null;
         try {
+            camera.setUrl(toURLEncoding(camera.getUrl()));
             url = new URL("http://localhost:1026/v2/entities");
             HttpURLConnection http = (HttpURLConnection)url.openConnection();
             http.setRequestMethod("POST");
             http.setDoOutput(true);
             http.setRequestProperty("Content-Type", "application/json");
-
 
 
             byte[] out = orionCameraEntityParser.getOrionEntityFrom(camera).getBytes(StandardCharsets.UTF_8);
@@ -73,6 +84,7 @@ public class OrionContextBroker {
     public boolean updateCamera(Camera camera) throws Exception {
         URL url = null;
         try {
+            camera.setUrl(toURLEncoding(camera.getUrl()));
             url = new URL("http://localhost:1026/v2/entities/"+camera.getId()+"/attrs");
             HttpURLConnection http = (HttpURLConnection)url.openConnection();
             http.setRequestMethod("POST");
@@ -115,5 +127,13 @@ public class OrionContextBroker {
             e.printStackTrace();
             return false;
         }
+    }
+
+    private String toURLEncoding(String toEncode) {
+        String encoded = toEncode;
+        for (Map.Entry<String, String> entry : SPECIAL_CHARACTERS.entrySet()) {
+            encoded = encoded.replace(entry.getKey(), entry.getValue());
+        }
+        return encoded;
     }
 }
