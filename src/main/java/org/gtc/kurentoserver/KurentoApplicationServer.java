@@ -17,12 +17,12 @@ import org.springframework.web.socket.config.annotation.EnableWebSocket;
 @SpringBootApplication
 @EnableWebSocket
 public class KurentoApplicationServer {
-	@Value("${kurento.address}")
+	@Value("${kurento.ws.url}")
 	private String kurentoAddress;
 
 	@Bean
 	public KurentoClient kurentoClient() {
-		return KurentoClient.create();
+		return KurentoClient.create(kurentoAddress);
 	}
 
 	@Bean
