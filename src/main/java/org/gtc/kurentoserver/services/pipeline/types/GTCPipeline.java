@@ -15,15 +15,17 @@ import org.kurento.orion.connector.OrionConnectorException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static java.lang.System.getenv;
+
 /**
  * Pipeline to visualice a camera
  */
 public class GTCPipeline extends WebRtcPipeline {
     private static final Logger log = LoggerFactory.getLogger(GTCPipeline.class);
-    
+
     private Camera camera;
     private PlayerEndpoint playerEndpoint;
-    private CarDetectionPublisher carPublisher = new CarDetectionPublisher(new OrionConnectorConfiguration());
+    private CarDetectionPublisher carPublisher;
     private CarDetector carDetector;
     private RecorderModule recorderModule;
     private boolean isPlaying;
@@ -31,6 +33,10 @@ public class GTCPipeline extends WebRtcPipeline {
     public GTCPipeline(KurentoClient kurentoClient, Camera camera) {
         super(kurentoClient);
         this.camera = camera;
+        OrionConnectorConfiguration orionConnectorConfiguration = new OrionConnectorConfiguration();
+        orionConnectorConfiguration.setOrionHost(getenv().getOrDefault("ORION_HOSTNAME",
+                configuration.getProperty("orion.host")));
+        carPublisher = new CarDetectionPublisher(orionConnectorConfiguration);
     }
 
     @Override
@@ -68,7 +74,7 @@ public class GTCPipeline extends WebRtcPipeline {
         // Configuration for the Car Detection
         
         if (camera.getKurentoConfig().getOrDefault("carDetection", false)) {
-            carDetector = new CarDetector.Builder(pipe, System.getenv().getOrDefault("CAR_DETECTOR_CASCADE_XML", 
+            carDetector = new CarDetector.Builder(pipe, getenv().getOrDefault("CAR_DETECTOR_CASCADE_XML",
             configuration.getProperty("kurento.cardetector.cascadexml.location")), camera.getId(),
                 Double.parseDouble(configuration.getProperty("kurento.cardetector.scalefactor")),
                 Integer.parseInt(configuration.getProperty("kurento.cardetector.minneighbors")),

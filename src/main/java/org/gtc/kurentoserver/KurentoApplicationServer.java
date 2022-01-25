@@ -19,6 +19,8 @@ import org.springframework.web.socket.config.annotation.EnableWebSocket;
 public class KurentoApplicationServer {
 	@Value("${kurento.ws.url}")
 	private String kurentoAddress;
+	@Value("${orion.host}")
+	private String orionHost;
 
 	@Bean
 	public KurentoClient kurentoClient() {
@@ -26,8 +28,15 @@ public class KurentoApplicationServer {
 	}
 
 	@Bean
+	public OrionConnectorConfiguration orionConnectorConfiguration() {
+		OrionConnectorConfiguration orionConnectorConfiguration = new OrionConnectorConfiguration();
+		orionConnectorConfiguration.setOrionHost(orionHost);
+		return orionConnectorConfiguration;
+	}
+
+	@Bean
 	public OrionSubscriptionManager orionSubscriptionManager() {
-		return new OrionSubscriptionManager(new OrionConnectorConfiguration());
+		return new OrionSubscriptionManager(orionConnectorConfiguration());
 	}
 
 	@Bean

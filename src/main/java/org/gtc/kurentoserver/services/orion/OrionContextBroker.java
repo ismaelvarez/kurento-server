@@ -5,6 +5,7 @@ import org.gtc.kurentoserver.entities.Camera;
 import org.gtc.kurentoserver.services.orion.parser.OrionCameraEntityParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
@@ -23,6 +24,8 @@ import java.util.Map;
  */
 @Component
 public class OrionContextBroker {
+    @Value("${orion.host}")
+    private String orionHost;
     private static final Logger log = LoggerFactory.getLogger(OrionContextBroker.class);
     OrionCameraEntityParser orionCameraEntityParser = new OrionCameraEntityParser();
 
@@ -33,7 +36,7 @@ public class OrionContextBroker {
         log.trace("OrionContextBroker::getCameras()");
         URL url = null;
         try {
-            url = new URL("http://localhost:1026/v2/entities?type=Camera");
+            url = new URL("http://"+orionHost+":1026/v2/entities?type=Camera");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestProperty("accept", "application/json");
 
@@ -49,7 +52,7 @@ public class OrionContextBroker {
     public boolean createCamera(Camera camera) throws Exception {
         URL url = null;
         try {
-            url = new URL("http://localhost:1026/v2/entities");
+            url = new URL("http://"+orionHost+":1026/v2/entities");
             HttpURLConnection http = (HttpURLConnection)url.openConnection();
             http.setRequestMethod("POST");
             http.setDoOutput(true);
@@ -74,7 +77,7 @@ public class OrionContextBroker {
     public boolean updateCamera(Camera camera) throws Exception {
         URL url = null;
         try {
-            url = new URL("http://localhost:1026/v2/entities/"+camera.getId()+"/attrs");
+            url = new URL("http://"+orionHost+":1026/v2/entities/"+camera.getId()+"/attrs");
             HttpURLConnection http = (HttpURLConnection)url.openConnection();
             http.setRequestMethod("POST");
             http.setDoOutput(true);
@@ -102,7 +105,7 @@ public class OrionContextBroker {
     public boolean deleteCamera(String id) throws Exception {
         URL url = null;
         try {
-            url = new URL("http://localhost:1026/v2/entities/"+id);
+            url = new URL("http://"+orionHost+":1026/v2/entities/"+id);
 
             HttpURLConnection http = (HttpURLConnection)url.openConnection();
             http.setRequestMethod("DELETE");
