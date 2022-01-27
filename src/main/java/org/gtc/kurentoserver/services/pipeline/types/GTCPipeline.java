@@ -34,7 +34,7 @@ public class GTCPipeline extends WebRtcPipeline {
         super(kurentoClient);
         this.camera = camera;
         OrionConnectorConfiguration orionConnectorConfiguration = new OrionConnectorConfiguration();
-        orionConnectorConfiguration.setOrionHost(getenv().getOrDefault("ORION_HOSTNAME",
+        orionConnectorConfiguration.setOrionHost(getenv().getOrDefault("ORION_HOST",
                 configuration.getProperty("orion.host")));
         carPublisher = new CarDetectionPublisher(orionConnectorConfiguration);
     }
