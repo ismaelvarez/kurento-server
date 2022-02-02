@@ -152,6 +152,9 @@ public class CameraController {
 
         Camera camera1 = repository.getCamera(camera.getId());
 
+        if (camera.getPassword().equals(""))
+            camera.setPassword(camera1.getPassword());
+
         camera.setOrder(camera1.getOrder());
 
         try {
