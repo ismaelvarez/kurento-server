@@ -152,7 +152,7 @@ public class CameraController {
 
         Camera camera1 = repository.getCamera(camera.getId());
 
-        if (camera.getPassword().equals(""))
+        if (camera.getPassword() == null)
             camera.setPassword(camera1.getPassword());
 
         camera.setOrder(camera1.getOrder());
@@ -164,7 +164,7 @@ public class CameraController {
                     kurentoServerHelper.deletePipelineOfCamera(camera);
                 }
                 if (camera.getCameraType().equalsIgnoreCase(STREAM)) {
-                    if (kurentoServerHelper.contains(camera.getId()))
+                    if (!kurentoServerHelper.contains(camera.getId()))
                         kurentoServerHelper.createPipelineWithCamera(camera);
                 }
             }
