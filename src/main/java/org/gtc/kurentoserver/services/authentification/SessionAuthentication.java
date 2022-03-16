@@ -1,19 +1,23 @@
 package org.gtc.kurentoserver.services.authentification;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 public class SessionAuthentication
 {
-    private final Map<String, LocalTime> sessionsLogged;
+    private static final Logger log = LoggerFactory.getLogger(SessionAuthentication.class);
+    private final ConcurrentHashMap<String, LocalTime> sessionsLogged;
 
     public SessionAuthentication() {
-        sessionsLogged = new HashMap<>();
+        sessionsLogged = new ConcurrentHashMap<>();
     }
 
     public boolean isLogged(String sessionId) {
@@ -34,10 +38,14 @@ public class SessionAuthentication
 
     @Scheduled(fixedRate = 3600000)
     public void refresh() {
-        sessionsLogged.forEach((key, value) -> {
-            if (ChronoUnit.HOURS.between(LocalTime.now(), value) > 6) {
-                logOut(key);
-            }
-        });
+        try {
+            sessionsLogged.forEach((key, value) -> {
+                if (ChronoUnit.HOURS.between(LocalTime.now(), value) > 6) {
+                    logOut(key);
+                }
+            });
+        } catch (Exception ex) {
+            log.warn("An error has occurred while checking sessions. "  + ex.getMessage());
+        }
     }
 }
