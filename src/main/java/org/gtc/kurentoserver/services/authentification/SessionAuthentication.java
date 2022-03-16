@@ -14,10 +14,10 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SessionAuthentication
 {
     private static final Logger log = LoggerFactory.getLogger(SessionAuthentication.class);
-    private final ConcurrentHashMap<String, LocalTime> sessionsLogged;
+    private final Map<String, LocalTime> sessionsLogged;
 
     public SessionAuthentication() {
-        sessionsLogged = new ConcurrentHashMap<>();
+        sessionsLogged = new HashMap<>();
     }
 
     public boolean isLogged(String sessionId) {
