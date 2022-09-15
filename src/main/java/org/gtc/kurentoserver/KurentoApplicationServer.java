@@ -1,6 +1,8 @@
 package org.gtc.kurentoserver;
 
 import org.gtc.kurento.orion.subscription.OrionSubscriptionManager;
+import org.gtc.kurentoserver.api.SessionManager;
+import org.gtc.kurentoserver.services.authentification.JWTAuthentication;
 import org.kurento.client.KurentoClient;
 import org.kurento.orion.connector.OrionConnectorConfiguration;
 import org.springframework.beans.factory.annotation.Value;
@@ -8,7 +10,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.ServletComponentScan;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
@@ -46,7 +48,7 @@ public class KurentoApplicationServer {
 			public void addCorsMappings(CorsRegistry registry) {
 				registry
 						.addMapping("/**").allowedOrigins("*")
-						.allowedHeaders("*", "session-id")
+						.allowedHeaders("*", "token")
 						.exposedHeaders("session-alive")
 						.allowedMethods("POST", "PATCH","GET","DELETE");
 			}

@@ -1,4 +1,4 @@
-package org.gtc.kurentoserver.entities;
+package org.gtc.kurentoserver.model;
 
 public class User {
     private String username;

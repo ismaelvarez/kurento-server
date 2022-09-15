@@ -1,4 +1,4 @@
-{
+[{
   "id":"interior",
   "type":"Camera",
   "cameraType": {
@@ -53,5 +53,12 @@
     "type":"String",
     "value":"operador",
     "metadata":{}
+  },
+  "restrictive": {
+    "type":"String",
+    "value":true,
+    "metadata":{}
+
   }
 }
+  ]

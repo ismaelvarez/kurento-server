@@ -32,7 +32,7 @@ public class WebRTCProtocolHandler extends TextWebSocketHandler {
   
   @Override
   public void handleTextMessage(WebSocketSession session, TextMessage message) {
-    //Message sended by web client
+    //Message sent by web client
     try {
       JsonObject jsonMessage = gson.fromJson(message.getPayload(), JsonObject.class);
 
@@ -42,11 +42,11 @@ public class WebRTCProtocolHandler extends TextWebSocketHandler {
       switch (jsonMessage.get("id").getAsString()) {
         case "sdpOffer":
           try {
-            if (jsonMessage.has("idCam") && !jsonMessage.get("idCam").isJsonNull() ) {
+            if (jsonMessage.has("camera") && !jsonMessage.get("camera").isJsonNull() )
               createSDPAnswer(session, jsonMessage);
-            } else {
-              sendError(session, "idCam no specified in the message");
-            }
+            else
+              sendError(session, "Camera no specified in the message");
+
             
           } catch (Throwable t) {
             sendError(session, t.getMessage());
@@ -67,8 +67,8 @@ public class WebRTCProtocolHandler extends TextWebSocketHandler {
           IceCandidate cand = new IceCandidate(candidate.get("candidate").getAsString(),
               candidate.get("sdpMid").getAsString(), candidate.get("sdpMLineIndex").getAsInt());
 
-          if (jsonMessage.has("idCam")) {
-            String idCam = jsonMessage.get("idCam").getAsString();
+          if (jsonMessage.has("camera")) {
+            String idCam = jsonMessage.get("camera").getAsString();
             pipelineManager.get(idCam).addCandidate(cand, session.getId());
           }
           break;
@@ -101,15 +101,14 @@ public class WebRTCProtocolHandler extends TextWebSocketHandler {
   }
 
   /**
-   * Creates a SDP Answer to the web client. Also it creates/connects the endpoint to the speficic pipeline
-   * using the field idCam  
+   * Creates SDP Answer to the web client. Also, it creates/connects the endpoint to the specific pipeline
+   * using the field camera
    * @param session Websocket session
    * @param jsonMessage Message in JSON sended by the web client
-   * @throws IOException 
    */
   private void createSDPAnswer(WebSocketSession session, JsonObject jsonMessage) throws IOException {
     //Identifier of camera
-    String idCam = jsonMessage.get("idCam").getAsString();
+    String idCam = jsonMessage.get("camera").getAsString();
 
     //Create WebRTCEndpoint per session
     MediaPipeline pipeline = pipelineManager.get(idCam).getMediaPipeline();
@@ -119,7 +118,7 @@ public class WebRTCProtocolHandler extends TextWebSocketHandler {
       JsonObject response = new JsonObject();
       response.addProperty("id", "iceCandidate");
       response.add("candidate", JsonUtils.toJsonObject(event.getCandidate()));
-      response.add("idCam", JsonUtils.toJsonElement(idCam));
+      response.add("camera", JsonUtils.toJsonElement(idCam));
       try {
         synchronized (session) {
           session.sendMessage(new TextMessage(response.toString()));
@@ -170,7 +169,7 @@ public class WebRTCProtocolHandler extends TextWebSocketHandler {
     JsonObject response = new JsonObject();
     response.addProperty("id", "sdpAnswer");
     response.addProperty("sdpAnswer", sdpAnswer);
-    response.addProperty("idCam", jsonMessage.get("idCam").getAsString());
+    response.addProperty("camera", jsonMessage.get("camera").getAsString());
 
     synchronized (session) {
       session.sendMessage(new TextMessage(response.toString()));

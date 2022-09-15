@@ -1,26 +1,21 @@
 package org.gtc.kurentoserver.services.restful;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.*;
 
 import javax.annotation.PostConstruct;
 import javax.persistence.EntityExistsException;
 import javax.persistence.EntityNotFoundException;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-
 import org.gtc.kurentoserver.KurentoServerHelper;
+import org.gtc.kurentoserver.api.SessionManager;
 import org.gtc.kurentoserver.dao.CameraDAO;
-import org.gtc.kurentoserver.entities.Camera;
-import org.gtc.kurentoserver.services.authentification.SessionAuthentication;
+import org.gtc.kurentoserver.model.Camera;
+import org.gtc.kurentoserver.services.orion.entities.EntityResults;
 import org.gtc.kurentoserver.services.exceptions.NotAuthenticatedException;
-import org.gtc.kurentoserver.services.orion.OrionContextBroker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -31,70 +26,96 @@ import org.springframework.web.bind.annotation.*;
 @RestController("rest")
 @Order(0)
 public class CameraController {
-    private static final String STREAM = "stream";
+    private static final String STREAM = "STREAM";
 
     private static final Logger log = LoggerFactory.getLogger(CameraController.class);
 
     @Autowired
     private KurentoServerHelper kurentoServerHelper;
-
-    @Autowired
-    private OrionContextBroker ocb;
     
     @Autowired
     private CameraDAO repository;
 
     @Autowired
-    private SessionAuthentication sessions;
+    private SessionManager sessions;
 
     @PostConstruct
     public void init() {
         log.trace("CameraController::init");
     }
 
+
+
     /**
      * List all cameras
-     * @param groups If provided, list all cameras with that group
+     * @param limit Number of cameras to be returned
+     * @param offset Number of page
      * @return list of cameras
      */
     @GetMapping("/cameras")
     @ResponseBody
-    List<Camera> all(@RequestParam Optional<String> groups,
-                     @RequestHeader(value="session-id", required = false) String sessionId) {
+    EntityResults<Camera> getAll(@RequestParam Optional<Integer> limit, @RequestParam Optional<Integer> offset,
+                     @RequestHeader(value="x-access-token", required = false) String sessionId) {
 
-        boolean isLogged = sessions.isLogged(sessionId);
+        log.trace("CameraController::getAll()");
+        boolean isLogged = sessionId != null && sessions.sessionAlive(sessionId);
+
+        return repository.getBy("*", new ArrayList<>(), isLogged, limit.orElse(0), offset.orElse(0));
+
+     }
+
+    /**
+     * Get cameras by filters
+     * @param limit Number of cameras to be returned
+     * @param offset Number of page
+     * @param name If provided, list all cameras with that id like idPattern
+     * @param locations If provided, list all cameras with that location
+     * @return list of cameras
+     */
+    @GetMapping("/cameras/search")
+    @ResponseBody
+    EntityResults<Camera> getBy(@RequestParam String name, @RequestParam Optional<String> locations, @RequestParam Optional<Integer> limit, @RequestParam Optional<Integer> offset,
+                              @RequestHeader(value="x-access-token", required = false) String sessionId) {
+
         log.trace("CameraController::all()");
-        if (groups.isPresent()) {
-            List<String> list = Arrays.asList(groups.get().split(","));
-            return repository.getAll().stream().filter(c-> !Collections.disjoint(c.getGroup(), list)).filter(c-> isLogged || c.isRestrictive()).collect(Collectors.toList());
-        }
+        boolean isLogged = sessionId != null && sessions.sessionAlive(sessionId);
+        List<String> list = new ArrayList<>();
 
-        return repository.getAll().stream().filter(c-> isLogged || c.isRestrictive()).collect(Collectors.toList());
+        if (locations.isPresent())
+            list = Arrays.asList(locations.orElse("").split(","));
+
+        return repository.getBy(name, list, isLogged, limit.orElse(0), offset.orElse(0));
     }
 
     /**
      * Get camera by id
-     * @param id Id of camera
+     * @param id Identification of camera
      * @return camera
      */
     @GetMapping("/cameras/{id}")
-    Camera getCamera(@PathVariable("id") String id) {
+    Camera getCamera(@PathVariable("id") String id,
+                     @RequestHeader(value="x-access-token") String sessionId) {
         log.trace("CameraController::all()");
-        if (!repository.contains(id))
+
+        if (!sessions.sessionAlive(sessionId))
+            throw new NotAuthenticatedException();
+
+        Camera camera = repository.getCamera(id);
+        if (camera == null)
             throw new EntityNotFoundException();
-        return repository.getCamera(id);
+        return camera;
     }
 
     /**
-     * Delete camera
+     * Delete camera from the OCB and remove the pipeline
      * @param id id of camera
      */
     @DeleteMapping("/cameras/{id}")
     @CrossOrigin("*")
-    void deleteCamera(@RequestHeader(value="session-id", required = false) String sessionId, @PathVariable("id") String id) {
+    void deleteCamera(@RequestHeader(value="x-access-token") String sessionId, @PathVariable("id") String id) {
         log.trace("CameraController::deleteCamera({})", id);
 
-        if (!sessions.isLogged(sessionId))
+        if (!sessions.sessionAlive(sessionId))
             throw new NotAuthenticatedException();
 
         if (!repository.contains(id)) {
@@ -102,8 +123,7 @@ public class CameraController {
         }
 
         try {
-            if (ocb.deleteCamera(id)) {
-                repository.delete(id);
+            if (repository.delete(id)) {
                 kurentoServerHelper.deletePipelineOfCamera(id);
             }
         } catch (Exception e) {
@@ -111,13 +131,17 @@ public class CameraController {
         }
     }
 
+    /**
+     * Create camera from the OCB and create the pipeline
+     * @param camera Camara information to be inserted in OCB
+     */
     @PostMapping("/cameras")
     @ResponseBody
     @CrossOrigin("*")
-    void create(@RequestHeader(value="session-id", required = false) String sessionId, @RequestBody @Validated Camera camera) {
+    void create(@RequestHeader(value="x-access-token") String sessionId, @RequestBody @Validated Camera camera) {
         log.trace("CameraController::create()");
-        log.info("Create camera {}; Session={}", camera.getId(), sessionId);
-        if (!sessions.isLogged(sessionId))
+
+        if (!sessions.sessionAlive(sessionId))
             throw new NotAuthenticatedException();
 
         if (repository.contains(camera.getId())) {
@@ -125,9 +149,8 @@ public class CameraController {
         }
 
         try {
-            if (ocb.createCamera(camera)) {
-                repository.add(camera);
-                if (camera.getCameraType().equalsIgnoreCase(STREAM)) {
+            if (repository.add(camera)) {
+                if (camera.getCameraMode().equalsIgnoreCase(STREAM)) {
                     kurentoServerHelper.createPipelineWithCamera(camera);
                 }
             }
@@ -136,18 +159,20 @@ public class CameraController {
         }
     }
 
-
-
+    /**
+     * Update camera from the OCB and update the pipeline
+     * @param camera Camara information to be updated in OCB
+     */
     @PatchMapping("/cameras")
     @CrossOrigin("*")
-    void update(@RequestHeader(value="session-id", required = false) String sessionId, @RequestBody @Validated Camera camera) {
+    void update(@RequestHeader(value="x-access-token") String sessionId, @RequestBody @Validated Camera camera) {
         log.trace("CameraController::update()");
 
-        if (!sessions.isLogged(sessionId))
+        if (!sessions.sessionAlive(sessionId))
             throw new NotAuthenticatedException();
 
         if (!repository.contains(camera.getId())) {
-            throw new EntityExistsException();
+            throw new EntityNotFoundException();
         }
 
         Camera camera1 = repository.getCamera(camera.getId());
@@ -155,15 +180,14 @@ public class CameraController {
         if (camera.getPassword() == null)
             camera.setPassword(camera1.getPassword());
 
-        camera.setOrder(camera1.getOrder());
+        //camera.setOrder(camera1.getOrder());
 
         try {
-            if (ocb.updateCamera(camera)) {
-                repository.update(camera);
+            if (repository.update(camera)) {
                 if (kurentoServerHelper.contains(camera.getId())) {
                     kurentoServerHelper.deletePipelineOfCamera(camera);
                 }
-                if (camera.getCameraType().equalsIgnoreCase(STREAM)) {
+                if (camera.getCameraMode().equalsIgnoreCase(STREAM)) {
                     if (!kurentoServerHelper.contains(camera.getId()))
                         kurentoServerHelper.createPipelineWithCamera(camera);
                 }

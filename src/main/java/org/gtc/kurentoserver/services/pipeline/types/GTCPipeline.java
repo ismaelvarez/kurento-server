@@ -1,12 +1,11 @@
 package org.gtc.kurentoserver.services.pipeline.types;
 
-import org.gtc.kurentoserver.entities.Camera;
+import org.gtc.kurentoserver.model.Camera;
 import org.gtc.kurentoserver.services.exceptions.PipelineErrorException;
-import org.gtc.kurentoserver.services.orion.publisher.CarDetectionPublisher;
+import org.gtc.kurentoserver.services.orion.publisher.TrafficFlowObservedPublisher;
 import org.gtc.kurentoserver.services.pipeline.WebRtcPipeline;
 import org.kurento.client.KurentoClient;
 import org.kurento.client.MediaElement;
-import org.kurento.client.MediaFlowState;
 import org.kurento.client.PlayerEndpoint;
 import org.kurento.module.cardetector.CarDetector;
 import org.kurento.module.recordermodule.RecorderModule;
@@ -18,14 +17,14 @@ import org.slf4j.LoggerFactory;
 import static java.lang.System.getenv;
 
 /**
- * Pipeline to visualice a camera
+ * Pipeline to visualize a camera
  */
 public class GTCPipeline extends WebRtcPipeline {
     private static final Logger log = LoggerFactory.getLogger(GTCPipeline.class);
 
-    private Camera camera;
+    private final Camera camera;
     private PlayerEndpoint playerEndpoint;
-    private CarDetectionPublisher carPublisher;
+    private final TrafficFlowObservedPublisher carPublisher;
     private CarDetector carDetector;
     private RecorderModule recorderModule;
     private boolean isPlaying;
@@ -34,9 +33,10 @@ public class GTCPipeline extends WebRtcPipeline {
         super(kurentoClient);
         this.camera = camera;
         OrionConnectorConfiguration orionConnectorConfiguration = new OrionConnectorConfiguration();
+        orionConnectorConfiguration.setFiwareService("gtc");
         orionConnectorConfiguration.setOrionHost(getenv().getOrDefault("ORION_HOST",
                 configuration.getProperty("orion.host")));
-        carPublisher = new CarDetectionPublisher(orionConnectorConfiguration);
+        carPublisher = new TrafficFlowObservedPublisher(orionConnectorConfiguration);
     }
 
     @Override
@@ -61,7 +61,7 @@ public class GTCPipeline extends WebRtcPipeline {
         MediaElement last = playerEndpoint;
 
         // Configuration for the Recorder Module
-        if (camera.getKurentoConfig().getOrDefault("recorder", false)) {
+        if (camera.getKurentoModules().contains("imageRecorder")) {
             recorderModule = new RecorderModule.Builder(pipe, "/tmp/kurento/images/"+camera.getId(), camera.getId()).build();
             recorderModule.addRecorderModuleFrameSavedListener(event -> {
                 log.debug("Frame saved with name {}", event.getPathToFile());
@@ -73,7 +73,9 @@ public class GTCPipeline extends WebRtcPipeline {
 
         // Configuration for the Car Detection
         
-        if (camera.getKurentoConfig().getOrDefault("carDetection", false)) {
+        if (camera.getKurentoModules().contains("vehicleObjectDetection")) {
+            System.out.println(getenv().getOrDefault("CAR_DETECTOR_CASCADE_XML",
+                    configuration.getProperty("kurento.cardetector.cascadexml.location")));
             carDetector = new CarDetector.Builder(pipe, getenv().getOrDefault("CAR_DETECTOR_CASCADE_XML",
             configuration.getProperty("kurento.cardetector.cascadexml.location")), camera.getId(),
                 Double.parseDouble(configuration.getProperty("kurento.cardetector.scalefactor")),

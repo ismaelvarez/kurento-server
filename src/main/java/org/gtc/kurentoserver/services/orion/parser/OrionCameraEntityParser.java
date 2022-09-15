@@ -6,17 +6,25 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.gtc.kurentoserver.entities.Camera;
+import org.gtc.kurentoserver.model.Camera;
+import org.gtc.kurentoserver.security.Encrytor;
 import org.gtc.kurentoserver.services.orion.OrionEntitiesParser;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+import java.security.NoSuchAlgorithmException;
+import java.util.*;
 
 public class OrionCameraEntityParser implements OrionEntitiesParser<Camera> {
 
-    private Map<String, String> SPECIAL_CHARACTERS = new HashMap<String, String>() {{
+    private final SecretKey key;
+    private final IvParameterSpec ivParameterSpec;
+    public OrionCameraEntityParser(SecretKey key, IvParameterSpec iv ) {
+        this.key = key;
+        ivParameterSpec = iv;
+    }
+
+    private final Map<String, String> SPECIAL_CHARACTERS = new HashMap<String, String>() {{
         put("<", "%3C");
         put(">", "%3E");
         put("\"", "%22");
@@ -27,82 +35,105 @@ public class OrionCameraEntityParser implements OrionEntitiesParser<Camera> {
     }};
 
     @Override
-    public List<Camera> getEntitiesFrom(String entities) throws Exception {
+    public Camera getEntityFrom(String entity) throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
         JavaType type = objectMapper.getTypeFactory().
-                constructCollectionType(List.class, Camera.class);
-        JsonNode data = objectMapper.readTree(entities);
+                constructType(Camera.class);
 
-        ArrayNode list = objectMapper.createArrayNode();
+        JsonNode node = objectMapper.readTree(entity);
 
-        for (JsonNode node : data) {
-            if (!node.has("id") || !node.has("url"))
-                continue;
+        ObjectNode camera = objectMapper.createObjectNode();
 
-            ObjectNode camera = objectMapper.createObjectNode();
+        if (!node.has("id") || !node.has("streamURL"))
+            return null;
 
-            camera.put("id", node.get("id").asText());
+        camera.put("id", node.get("id").asText());
 
-            Iterator<Map.Entry<String, JsonNode>> iterator = node.fields();
-            while (iterator.hasNext()) {
-                Map.Entry<String, JsonNode> field = iterator.next();
-                if (field.getValue() != null && field.getValue().get("value") != null && !field.getValue().get("value").isNull()) {
+        Iterator<Map.Entry<String, JsonNode>> iterator = node.fields();
+        while (iterator.hasNext()) {
+            Map.Entry<String, JsonNode> field = iterator.next();
+            if (field.getValue() != null && field.getValue().get("value") != null && !field.getValue().get("value").isNull()) {
+                if (field.getKey().equals("user") || field.getKey().equals("password")) {
+                    String plainText = Encrytor.decrypt("AES/CBC/PKCS5Padding", fromURLEncoding(field.getValue().get("value").asText()), key, ivParameterSpec);
+                    camera.put(field.getKey(), plainText);
+                } else {
                     camera.set(field.getKey(), field.getValue().get("value"));
                 }
             }
-            list.add(camera);
         }
-        return objectMapper.readValue(fromURLEncoding(list.toString()), type);
+
+        return objectMapper.readValue(fromURLEncoding(camera.toString()), type);
+    }
+
+    @Override
+    public List<Camera> getEntitiesFrom(String entities) throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        JsonNode data = objectMapper.readTree(entities);
+
+        List<Camera> listCamera = new ArrayList<>();
+
+        for (JsonNode node : data) {
+            listCamera.add(getEntityFrom(node.toString()));
+        }
+        return listCamera;
     }
 
     @Override
     public String getOrionEntityFrom(Camera entity) throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
-
         try {
 
             return "{\n" +
                     "\"id\": \""+toURLEncoding(entity.getId())+"\",\n" +
                     "\"type\": \"Camera\",\n" +
+                    "\"name\": {\n" +
+                    "\"type\": \"String\",\n" +
+                    "\"value\": \""+entity.getName()+"\"\n" +
+                    "},\n" +
+                    "\"cameraName\": {\n" +
+                    "\"type\": \"String\",\n" +
+                    "\"value\": \""+entity.getCameraName()+"\"\n" +
+                    "},\n" +
                     "\"cameraType\": {\n" +
                     "\"type\": \"String\",\n" +
                     "\"value\": \""+entity.getCameraType()+"\"\n" +
                     "},\n" +
-                    "\"order\":{\n" +
-                    "\"type\": \"Number\",\n" +
-                    "\"value\": "+entity.getOrder()+"\n" +
+                    "\"cameraUsage\": {\n" +
+                    "\"type\": \"String\",\n" +
+                    "\"value\": \""+entity.getCameraUsage()+"\"\n" +
+                    "},\n" +
+                    "\"cameraMode\": {\n" +
+                    "\"type\": \"String\",\n" +
+                    "\"value\": \""+entity.getCameraMode()+"\"\n" +
                     "},\n" +
                     "\"panoramic\":{\n" +
                     "\"type\": \"String\",\n" +
                     "\"value\": \""+entity.getPanoramic()+"\"\n" +
                     "},\n" +
-                    "\"name\": {\n" +
+                    "\"restrictive\": {\n" +
                     "\"type\": \"String\",\n" +
-                    "\"value\": \""+toURLEncoding(entity.getName())+"\"\n" +
+                    "\"value\": "+entity.isRestrictive()+"\n" +
                     "},\n" +
-                    "\"group\":{\n" +
-                    "\"type\": \"ArrayList\",\n" +
-                    "\"value\": "+objectMapper.writeValueAsString(entity.getGroup())+"\n" +
-                    "},\n" +
-                    "\"url\": {\n" +
+                    "\"location\":{\n" +
                     "\"type\": \"String\",\n" +
-                    "\"value\": \""+toURLEncoding(entity.getUrl())+"\"\n" +
+                    "\"value\": \""+entity.getLocation()+"\"\n" +
+                    "},\n" +
+                    "\"streamURL\": {\n" +
+                    "\"type\": \"String\",\n" +
+                    "\"value\": \""+toURLEncoding(entity.getStreamURL())+"\"\n" +
                     "},\n" +
                     "\"user\": {\n" +
                     "\"type\": \"String\",\n" +
-                    "\"value\": \""+entity.getUser()+"\"\n" +
+                    "\"value\": \""+toURLEncoding(Encrytor.encrypt("AES/CBC/PKCS5Padding", entity.getUser(), key, ivParameterSpec))+"\"\n" +
                     "},\n" +
                     "\"password\": {\n" +
                     "\"type\": \"String\",\n" +
-                    "\"value\" : \""+entity.getPassword()+"\"\n" +
+                    "\"value\" : \""+toURLEncoding(Encrytor.encrypt("AES/CBC/PKCS5Padding", entity.getPassword(), key, ivParameterSpec))+"\"\n" +
                     "},\n" +
-                    "\"kurentoConfig\": {\n" +
+                    "\"kurentoModules\": {\n" +
                     "\"type\": \"Map\",\n" +
-                    "\"value\": "+objectMapper.writeValueAsString(entity.getKurentoConfig())+"\n" +
-                    "},\n" +
-                    "\"description\": {\n" +
-                    "\"type\": \"String\",\n" +
-                    "\"value\": \""+entity.getDescription()+"\"\n" +
+                    "\"value\": "+objectMapper.writeValueAsString(entity.getKurentoModules())+"\n" +
                     "}\n" +
                     "}";
         } catch (JsonProcessingException e) {

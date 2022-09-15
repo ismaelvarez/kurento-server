@@ -5,32 +5,21 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.gtc.kurentoserver.dao.UserDAO;
-import org.gtc.kurentoserver.entities.Camera;
-import org.gtc.kurentoserver.services.authentification.SessionAuthentication;
+import org.gtc.kurentoserver.api.SessionManager;
+import org.gtc.kurentoserver.api.UserDAO;
+import org.gtc.kurentoserver.dao.UserLocalSessionDAO;
+import org.gtc.kurentoserver.dao.UserMongoDBDAO;
 import org.gtc.kurentoserver.services.exceptions.UserNotFoundException;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.context.request.RequestContextHolder;
 
-import javax.naming.AuthenticationException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import java.io.IOException;
-
-import static org.springframework.security.web.context.HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController("rest2")
 @Order(10)
@@ -38,20 +27,17 @@ public class UserController {
     private static final Logger log = LoggerFactory.getLogger(UserController.class);
 
     @Autowired
-    private UserDAO userDAO;
+    private UserMongoDBDAO userDAO;
 
     @Autowired
-    private SessionAuthentication sessions;
+    private SessionManager sessions;
 
     /**
      * Log the session with admin user
-     * @param credentials User credentials
-     * @throws JsonMappingException
-     * @throws JsonProcessingException
+     * @param credentials Username and password
      */
     @PostMapping("/users/login")
-    boolean login(@RequestHeader(value="session-id", required = false) String sessionId,
-                  @RequestBody @Validated String credentials) throws Exception {
+    Map<String, String> login(@RequestBody @Validated String credentials) throws Exception {
         log.trace("UserController::login()");
         try {
             ObjectMapper objectMapper = new ObjectMapper();
@@ -61,8 +47,9 @@ public class UserController {
             String password = jsonNode.get("password").asText();
 
             if (userDAO.getUser(username, password) != null) {
-                sessions.logIn(sessionId);
-                return true;
+                Map<String, String> map = new HashMap<>();
+                map.put("accessToken", sessions.createSession(username));
+                return map;
             }
 
             throw new UserNotFoundException(username);
@@ -75,17 +62,25 @@ public class UserController {
         }
     }
 
+    /**
+     * Check if a token stills valid
+     * @param sessionId JWT token
+     */
+    @GetMapping("/users/isLogged")
+    boolean isLogged(@RequestHeader(value="x-access-token") String sessionId) {
+        log.trace("UserController::isLogged()");
+
+        return sessions.sessionAlive(sessionId);
+    }
+
 
     /**
-     * Log the session with admin user
-     * @param sessionId session-id
+     * Log out session
+     * @param sessionId JWT token
      */
     @PostMapping("/users/logout")
-    boolean logOut(@RequestHeader(value="session-id", required = false) String sessionId) {
+    boolean logOut(@RequestHeader(value="x-access-token") String sessionId) {
         log.trace("UserController::logout()");
-        if (!sessions.isLogged(sessionId))
-            sessions.logIn(sessionId);
-
         return true;
     }
 

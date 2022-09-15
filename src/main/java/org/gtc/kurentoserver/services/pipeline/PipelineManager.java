@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
 public class PipelineManager {
     private static final Logger log = LoggerFactory.getLogger(PipelineManager.class);
 
-    private ConcurrentMap<String, WebRtcPipeline> pipelines;
+    private final ConcurrentMap<String, WebRtcPipeline> pipelines;
 
     public PipelineManager() {
         pipelines = new ConcurrentHashMap<>();

@@ -2,10 +2,8 @@ package org.gtc.kurentoserver;
 
 import javax.annotation.PostConstruct;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.gtc.kurentoserver.dao.CameraDAO;
-import org.gtc.kurentoserver.entities.Camera;
-import org.gtc.kurentoserver.services.orion.OrionContextBroker;
+import org.gtc.kurentoserver.model.Camera;
 import org.gtc.kurentoserver.services.pipeline.PipelineManager;
 import org.gtc.kurentoserver.services.pipeline.types.GTCPipeline;
 import org.kurento.client.KurentoClient;
@@ -28,8 +26,6 @@ public class KurentoServerHelper {
 	private PipelineManager manager;
 	@Autowired
 	private CameraDAO repository;
-	@Autowired
-	private OrionContextBroker ocb;
 
 	@Value( "${kurento.images.location}" )
     public static String kurentoImagesLocation;
@@ -42,9 +38,8 @@ public class KurentoServerHelper {
 	public void init() {
 		log.trace("KurentoServerHelper::init()");
 		try {
-			for (Camera c : ocb.getCameras()) {
-				repository.add(c);
-				if (c.getCameraType().equalsIgnoreCase("stream"))
+			for (Camera c : repository.getAll(0, 0).getResults()) {
+				if (c.getCameraMode().equalsIgnoreCase("stream"))
 					createPipelineWithCamera(c);
 			}
 		} catch (Exception e) {
