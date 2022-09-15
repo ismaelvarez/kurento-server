@@ -67,8 +67,8 @@ public class CameraDAO {
         return ocb.getAll(limit, offset);
     }
 
-    public EntityResults<Camera> getBy(String idPattern, List<String> locations, boolean restrictive, int limit, int offset) {
-        EntityResults<Camera> cameras = ocb.getCamerasBy(idPattern, locations, restrictive, limit, offset);
+    public EntityResults<Camera> getBy(String idPattern, String location, boolean restrictive, int limit, int offset) {
+        EntityResults<Camera> cameras = ocb.getCamerasBy(idPattern, location, restrictive, limit, offset);
         if (cameras == null) {
             return new EntityResults<>(new ArrayList<>(), 0);
         }

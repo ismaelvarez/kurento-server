@@ -46,23 +46,11 @@ public class OrionContextBroker {
         orionCameraEntityParser = new OrionCameraEntityParser(Encrytor.getSecretKey(secretKey), Encrytor.getIV(iv));
     }
 
-    private String locationsToParam(List<String> locations) {
-        if (locations.size() == 0) {
-            return "";
-        }
-        StringBuilder location = new StringBuilder("&q=");
-        for (String s : locations) {
-            location.append("locations.value==").append(s).append(";");
-        }
-
-        return location.toString();
-    }
-
     /**
      * Search cameras
      */
 
-    public EntityResults<Camera> getCamerasBy(String idPattern, List<String> locations, boolean restrictive, int limit, int offset) {
+    public EntityResults<Camera> getCamerasBy(String idPattern, String location, boolean restrictive, int limit, int offset) {
         log.trace("OrionContextBroker::getCamerasBy()");
         URL url = null;
         try {
@@ -78,13 +66,15 @@ public class OrionContextBroker {
                 query.append("&offset=").append(limit);
             }
 
-            query.append(locationsToParam(locations));
-            if (!query.toString().contains("&q=") && !restrictive) {
-                query.append("&q=");
-            }
+            if (!location.equals(""))
+                query.append("&q=location~=").append(location).append(";");
 
-            if (!restrictive)
-                query.append("restrictive==").append(false).append(";");
+            if (!restrictive) {
+                if (query.toString().contains("&q="))
+                    query.append("restrictive==").append(false).append(";");
+                else
+                    query.append("&q=restrictive==").append(false).append(";");
+            }
 
             if (!idPattern.equals("*"))
                 query.append("&idPattern=").append(idPattern);

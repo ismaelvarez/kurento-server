@@ -44,48 +44,26 @@ public class CameraController {
         log.trace("CameraController::init");
     }
 
-
-
-    /**
-     * List all cameras
-     * @param limit Number of cameras to be returned
-     * @param offset Number of page
-     * @return list of cameras
-     */
-    @GetMapping("/cameras")
-    @ResponseBody
-    EntityResults<Camera> getAll(@RequestParam Optional<Integer> limit, @RequestParam Optional<Integer> offset,
-                     @RequestHeader(value="x-access-token", required = false) String sessionId) {
-
-        log.trace("CameraController::getAll()");
-        boolean isLogged = sessionId != null && sessions.sessionAlive(sessionId);
-
-        return repository.getBy("*", new ArrayList<>(), isLogged, limit.orElse(0), offset.orElse(0));
-
-     }
-
     /**
      * Get cameras by filters
      * @param limit Number of cameras to be returned
      * @param offset Number of page
      * @param name If provided, list all cameras with that id like idPattern
-     * @param locations If provided, list all cameras with that location
+     * @param location If provided, list all cameras with that location
      * @return list of cameras
      */
-    @GetMapping("/cameras/search")
+    @GetMapping("/cameras")
     @ResponseBody
-    EntityResults<Camera> getBy(@RequestParam String name, @RequestParam Optional<String> locations, @RequestParam Optional<Integer> limit, @RequestParam Optional<Integer> offset,
-                              @RequestHeader(value="x-access-token", required = false) String sessionId) {
+    EntityResults<Camera> getAll(@RequestParam Optional<String> name, @RequestParam Optional<String> location,
+                                 @RequestParam Optional<Integer> limit, @RequestParam Optional<Integer> offset,
+                     @RequestHeader(value="x-access-token", required = false) String sessionId) {
 
-        log.trace("CameraController::all()");
+        log.trace("CameraController::getAll()");
         boolean isLogged = sessionId != null && sessions.sessionAlive(sessionId);
-        List<String> list = new ArrayList<>();
 
-        if (locations.isPresent())
-            list = Arrays.asList(locations.orElse("").split(","));
+        return repository.getBy(name.orElse("*"), location.orElse(""), isLogged, limit.orElse(0), offset.orElse(0));
 
-        return repository.getBy(name, list, isLogged, limit.orElse(0), offset.orElse(0));
-    }
+     }
 
     /**
      * Get camera by id

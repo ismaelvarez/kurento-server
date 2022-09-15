@@ -31,10 +31,6 @@ public class UserMongoDBDAO implements UserDAO {
 
     @Value( "${mongo.host}" )
     private String host;
-    @Value( "${mongo.user}" )
-    private String user;
-    @Value( "${mongo.password}" )
-    private String password;
     @Value( "${mongo.database}" )
     private String databaseName;
 
