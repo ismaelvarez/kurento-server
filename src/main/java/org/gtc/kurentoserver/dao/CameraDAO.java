@@ -60,7 +60,14 @@ public class CameraDAO {
     }
 
     public Camera getCamera(String cameraId) {
-        return ocb.getCamera(cameraId);
+        Camera camera = ocb.getCamera(cameraId);
+        if (camera == null) return null;
+
+        for (String restrictiveCamera : restrictedCameras)
+            if (camera.getStreamURL().equals(restrictiveCamera))
+                camera.setRestrictive(true);
+
+        return camera;
     }
 
     public EntityResults<Camera> getAll(int limit, int offset) {

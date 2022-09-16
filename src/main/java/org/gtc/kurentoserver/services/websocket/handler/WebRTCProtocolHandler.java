@@ -6,6 +6,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 
+import org.gtc.kurentoserver.api.SessionManager;
+import org.gtc.kurentoserver.dao.CameraDAO;
 import org.gtc.kurentoserver.services.pipeline.PipelineManager;
 import org.kurento.client.IceCandidate;
 import org.kurento.client.MediaPipeline;
@@ -27,13 +29,22 @@ public class WebRTCProtocolHandler extends TextWebSocketHandler {
 
   @Autowired
   private PipelineManager pipelineManager;
+
+  @Autowired
+  private SessionManager sessionManager;
+
+
+  @Autowired
+  private CameraDAO cameraDAO;
   private static final Gson gson = new GsonBuilder().create();
 
   
   @Override
   public void handleTextMessage(WebSocketSession session, TextMessage message) {
     //Message sent by web client
+
     try {
+      String token = session.getAttributes().get("token").toString();
       JsonObject jsonMessage = gson.fromJson(message.getPayload(), JsonObject.class);
 
       log.debug("Incoming message: {}", jsonMessage);
@@ -42,8 +53,17 @@ public class WebRTCProtocolHandler extends TextWebSocketHandler {
       switch (jsonMessage.get("id").getAsString()) {
         case "sdpOffer":
           try {
-            if (jsonMessage.has("camera") && !jsonMessage.get("camera").isJsonNull() )
-              createSDPAnswer(session, jsonMessage);
+            if (jsonMessage.has("camera") && !jsonMessage.get("camera").isJsonNull() ) {
+              if (!cameraDAO.getCamera(jsonMessage.get("camera").getAsString()).isRestrictive()) {
+                createSDPAnswer(session, jsonMessage);
+              } else {
+                if (sessionManager.sessionAlive(token))
+                  createSDPAnswer(session, jsonMessage);
+                else {
+                  sendError(session, "Camera restrictive");
+                }
+              }
+            }
             else
               sendError(session, "Camera no specified in the message");
 

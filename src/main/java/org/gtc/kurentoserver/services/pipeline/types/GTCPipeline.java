@@ -42,6 +42,7 @@ public class GTCPipeline extends WebRtcPipeline {
     @Override
     public void construct() throws PipelineErrorException {
         log.info("Constructing ViewerPipeline of camera : {}", camera.getId());
+        System.out.println(camera.getUrlWithCredentials());
         playerEndpoint = new PlayerEndpoint.Builder(pipe, camera.getUrlWithCredentials()).build();
 
         playerEndpoint.addErrorListener(event -> {

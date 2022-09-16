@@ -47,7 +47,7 @@ public class PipelineManager {
     }
 
     /**
-     * Remove and release the WebRTC of an pipeline
+     * Remove and release the WebRTC of a pipeline
      * @param session WebSocket session
      * @param id Pipeline identifier
      */
