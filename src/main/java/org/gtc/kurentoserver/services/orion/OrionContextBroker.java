@@ -79,7 +79,7 @@ public class OrionContextBroker {
             if (!idPattern.equals("*"))
                 query.append("&idPattern=").append(idPattern);
 
-            query.append("&options=count");
+            query.append("&options=count&orderBy=dateCreated");
 
             url = new URL(query.toString());
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
