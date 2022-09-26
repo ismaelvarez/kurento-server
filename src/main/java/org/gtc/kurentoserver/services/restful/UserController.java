@@ -69,6 +69,8 @@ public class UserController {
     @GetMapping("/users/isLogged")
     boolean isLogged(@RequestHeader(value="x-access-token", required = false) String sessionId) {
         log.trace("UserController::isLogged()");
+        if (sessionId == null)
+            return false;
         return sessions.sessionAlive(sessionId);
     }
 
