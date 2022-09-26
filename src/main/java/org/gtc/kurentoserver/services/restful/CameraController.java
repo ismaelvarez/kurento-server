@@ -64,11 +64,9 @@ public class CameraController {
 
         log.trace("CameraController::getAll()");
         boolean isLogged = sessionId != null && sessions.sessionAlive(sessionId);
-        if (restrictive.orElse(null) != null)
-            isLogged = isLogged && restrictive.get();
 
         return repository.getBy(name.orElse(null), cameraName.orElse(null), cameraType.orElse(null),
-                cameraUsage.orElse(null), cameraMode.orElse(null), location.orElse(null), isLogged,
+                cameraUsage.orElse(null), cameraMode.orElse(null), location.orElse(null), restrictive.orElse(isLogged ? null : false),
                 panoramic.orElse(null), streamURL.orElse(null), limit.orElse(0), offset.orElse(0));
 
      }
