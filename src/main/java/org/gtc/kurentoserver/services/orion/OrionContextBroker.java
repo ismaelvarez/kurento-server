@@ -18,6 +18,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Orion Context Broker subscription component
@@ -50,7 +51,7 @@ public class OrionContextBroker {
      * Search cameras
      */
 
-    public EntityResults<Camera> getCamerasBy(String idPattern, String location, boolean restrictive, int limit, int offset) {
+    public EntityResults<Camera> getCamerasBy(String idPattern, Map<String, String> attributes, int limit, int offset) {
         log.trace("OrionContextBroker::getCamerasBy()");
         URL url = null;
         try {
@@ -66,20 +67,24 @@ public class OrionContextBroker {
                 query.append("&offset=").append(limit);
             }
 
-            if (!location.equals(""))
-                query.append("&q=location~=").append(location).append(";");
-
-            if (!restrictive) {
-                if (query.toString().contains("&q="))
-                    query.append("restrictive==").append(false).append(";");
-                else
-                    query.append("&q=restrictive==").append(false).append(";");
+            query.append("&q=");
+            for (Map.Entry<String, String> mapSet : attributes.entrySet()) {
+                if (mapSet.getValue() != null) {
+                    if (mapSet.getKey().equals("panoramic") || mapSet.getKey().equals("restrictive")) {
+                        query.append(mapSet.getKey()).append("==").append(mapSet.getValue()).append(";");
+                    } else
+                        query.append(mapSet.getKey()).append("~=").append(mapSet.getValue()).append(";");
+                }
             }
 
-            if (!idPattern.equals("*"))
+            if (query.toString().endsWith("&q=")){
+                query.replace(query.length()-3, query.length(), "");
+            }
+
+            if (idPattern != null)
                 query.append("&idPattern=").append(idPattern);
 
-            query.append("&options=count");
+            query.append("&options=count&orderBy=dateCreated");
 
             url = new URL(query.toString());
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();

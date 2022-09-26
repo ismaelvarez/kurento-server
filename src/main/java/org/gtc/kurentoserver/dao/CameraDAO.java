@@ -3,9 +3,7 @@ package org.gtc.kurentoserver.dao;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import org.apache.commons.io.IOUtils;
 import org.gtc.kurentoserver.model.Camera;
@@ -74,8 +72,24 @@ public class CameraDAO {
         return ocb.getAll(limit, offset);
     }
 
-    public EntityResults<Camera> getBy(String idPattern, String location, boolean restrictive, int limit, int offset) {
-        EntityResults<Camera> cameras = ocb.getCamerasBy(idPattern, location, restrictive, limit, offset);
+    public EntityResults<Camera> getBy(String idPattern, String cameraName, String cameraType, String cameraUsage,
+                                       String cameraMode, String location, Boolean restrictive, Boolean panoramic,
+                                       String streamURL, int limit, int offset) {
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put(cameraName, cameraName);
+        attributes.put("cameraUsage", cameraUsage);
+        attributes.put("cameraType", cameraType);
+        attributes.put("cameraMode", cameraMode);
+        attributes.put("location", location);
+        if (restrictive == null) attributes.put("restrictive", null);
+        else attributes.put("restrictive", Boolean.toString(restrictive));
+
+        if (panoramic == null) attributes.put("panoramic", null);
+        else attributes.put("panoramic", Boolean.toString(panoramic));
+
+        attributes.put("streamURL", streamURL);
+
+        EntityResults<Camera> cameras = ocb.getCamerasBy(idPattern, attributes, limit, offset);
         if (cameras == null) {
             return new EntityResults<>(new ArrayList<>(), 0);
         }

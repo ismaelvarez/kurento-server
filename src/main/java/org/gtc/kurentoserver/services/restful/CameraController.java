@@ -54,14 +54,22 @@ public class CameraController {
      */
     @GetMapping("/cameras")
     @ResponseBody
-    EntityResults<Camera> getAll(@RequestParam Optional<String> name, @RequestParam Optional<String> location,
+    EntityResults<Camera> getAll(@RequestParam Optional<String> name, @RequestParam Optional<String> cameraUsage,
+                                 @RequestParam Optional<String> cameraName, @RequestParam Optional<String> cameraType,
+                                 @RequestParam Optional<String> cameraMode, @RequestParam Optional<String> location,
+                                 @RequestParam Optional<String> streamURL, @RequestParam Optional<Boolean> restrictive,
+                                 @RequestParam Optional<Boolean> panoramic,
                                  @RequestParam Optional<Integer> limit, @RequestParam Optional<Integer> offset,
                      @RequestHeader(value="x-access-token", required = false) String sessionId) {
 
         log.trace("CameraController::getAll()");
         boolean isLogged = sessionId != null && sessions.sessionAlive(sessionId);
+        if (restrictive.orElse(null) != null)
+            isLogged = isLogged && restrictive.get();
 
-        return repository.getBy(name.orElse("*"), location.orElse(""), isLogged, limit.orElse(0), offset.orElse(0));
+        return repository.getBy(name.orElse(null), cameraName.orElse(null), cameraType.orElse(null),
+                cameraUsage.orElse(null), cameraMode.orElse(null), location.orElse(null), isLogged,
+                panoramic.orElse(null), streamURL.orElse(null), limit.orElse(0), offset.orElse(0));
 
      }
 

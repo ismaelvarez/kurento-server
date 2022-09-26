@@ -67,9 +67,8 @@ public class UserController {
      * @param sessionId JWT token
      */
     @GetMapping("/users/isLogged")
-    boolean isLogged(@RequestHeader(value="x-access-token") String sessionId) {
+    boolean isLogged(@RequestHeader(value="x-access-token", required = false) String sessionId) {
         log.trace("UserController::isLogged()");
-
         return sessions.sessionAlive(sessionId);
     }
 
