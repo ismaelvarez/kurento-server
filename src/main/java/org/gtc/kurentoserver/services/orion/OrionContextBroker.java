@@ -36,7 +36,7 @@ public class OrionContextBroker {
         log.trace("OrionContextBroker::getCameras()");
         URL url = null;
         try {
-            url = new URL("http://"+orionHost+":1026/v2/entities?type=Camera");
+            url = new URL("http://"+orionHost+":1026/v2/entities?type=Camera&limit=1000");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestProperty("accept", "application/json");
 
